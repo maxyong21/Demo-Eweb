@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Products — VoltHub Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body data-base="../">
+  <div id="admin-app"></div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/store.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/admin.js"></script>
+  <script>
+    const root = Admin.mount('products', 'Products', 'Add, edit and manage your catalogue');
+    if (root) {
+      const I = UI.ICONS;
+      const state = { q: '', cat: 'all' };
+      const ART_TYPES = ['phone', 'laptop', 'tablet', 'headphones', 'earbuds', 'watch', 'speaker', 'camera', 'controller', 'powerbank', 'keyboard'];
+
+      document.getElementById('top-actions').innerHTML = `<button class="btn btn-primary btn-sm" id="add-product">${I.plus}<span class="hide-sm">Add Product</span></button>`;
+      root.innerHTML = `
+        ${Admin.demoBanner()}
+        <div class="admin-toolbar">
+          <div class="search"><input type="search" id="q" placeholder="Search products…" aria-label="Search products"><button type="button" aria-label="Search">${I.search}</button></div>
+          <select class="select" id="cat" aria-label="Category"><option value="all">All categories</option>${DATA.categories.map((c) => `<option value="${c.id}">${c.name}</option>`).join('')}</select>
+          <span class="muted" id="count" style="margin-left:auto;font-size:14px"></span>
+        </div>
+        <div class="card">
+          <div class="table-wrap" style="margin-top:-22px">
+            <table class="table">
+              <thead><tr><th>Product</th><th>Category</th><th class="num">Price</th><th class="num">Stock</th><th>Featured</th><th></th></tr></thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </div>`;
+
+      function render(highlight) {
+        const q = state.q.toLowerCase();
+        const all = Store.products();
+        const list = all.filter((p) => (state.cat === 'all' || p.category === state.cat) && (!q || (p.name + ' ' + p.id).toLowerCase().includes(q)));
+        document.getElementById('count').textContent = `${list.length} of ${all.length} products`;
+        document.getElementById('rows').innerHTML = list.length ? list.map((p) => `
+          <tr class="${p.id === highlight ? 'new-row' : ''}">
+            <td><div class="cell-product"><div class="cart-thumb">${UI.art(p)}</div><div><b>${UI.esc(p.name)}</b><small>${p.id} · ★ ${p.rating}</small></div></div></td>
+            <td>${UI.esc(Store.category(p.category).name)}</td>
+            <td class="num"><b>${Store.formatRM(p.price)}</b>${p.oldPrice ? `<br><small class="muted" style="text-decoration:line-through">${Store.formatRM(p.oldPrice)}</small>` : ''}</td>
+            <td class="num"><span class="${p.stock === 0 ? 'stock-out' : p.stock < 10 ? 'stock-low' : ''}">${p.stock}</span></td>
+            <td><label class="switch" title="Show on homepage"><input type="checkbox" data-feature="${p.id}" ${p.featured ? 'checked' : ''}><span></span></label></td>
+            <td><div class="row-actions">
+              <a class="icon-btn" href="../product.html?id=${p.id}" target="_blank" rel="noopener" title="View in store" aria-label="View ${UI.esc(p.name)}">${I.eye}</a>
+              <button class="icon-btn" data-edit="${p.id}" title="Edit" aria-label="Edit ${UI.esc(p.name)}">${I.edit}</button>
+              <button class="icon-btn danger" data-delete="${p.id}" title="Delete" aria-label="Delete ${UI.esc(p.name)}">${I.trash}</button>
+            </div></td>
+          </tr>`).join('') : `<tr><td colspan="6" style="text-align:center;padding:40px" class="muted">No products found.</td></tr>`;
+      }
+
+      function productForm(p) {
+        const isNew = !p;
+        p = p || { id: '', name: '', category: 'smartphones', art: 'phone', colors: ['#2563eb', '#7c3aed'], price: '', oldPrice: '', stock: 10, rating: 4.5, reviews: 0, featured: false, short: '', desc: '', specs: { Warranty: '1 Year Official' } };
+        const m = UI.openModal(`
+          <h2>${isNew ? 'Add new product' : 'Edit product'}</h2>
+          <p class="muted" style="font-size:14px">${isNew ? 'The product will appear in the storefront immediately.' : p.id}</p>
+          <form id="pform" style="margin-top:20px">
+            <div style="display:flex;gap:18px;align-items:flex-start;margin-bottom:18px">
+              <div class="art-preview" id="preview"></div>
+              <div style="flex:1;display:grid;gap:12px">
+                <div class="field"><label for="f-art">Illustration</label><select class="select" id="f-art">${ART_TYPES.map((t) => `<option ${t === p.art ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+                <div class="field"><label>Colours</label><div class="color-row"><input type="color" id="f-c1" value="${p.colors[0]}" aria-label="Colour 1"><input type="color" id="f-c2" value="${p.colors[1]}" aria-label="Colour 2"></div></div>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="field full"><label for="f-name">Product name *</label><input class="input" id="f-name" required value="${UI.esc(p.name)}"></div>
+              <div class="field"><label for="f-cat">Category</label><select class="select" id="f-cat">${DATA.categories.map((c) => `<option value="${c.id}" ${c.id === p.category ? 'selected' : ''}>${c.name}</option>`).join('')}</select></div>
+              <div class="field"><label for="f-stock">Stock *</label><input class="input" id="f-stock" type="number" min="0" required value="${p.stock}"></div>
+              <div class="field"><label for="f-price">Price (RM) *</label><input class="input" id="f-price" type="number" min="1" step="0.01" required value="${p.price}"></div>
+              <div class="field"><label for="f-old">Original price (RM)</label><input class="input" id="f-old" type="number" min="0" step="0.01" value="${p.oldPrice || ''}" placeholder="Leave blank if not on sale"></div>
+              <div class="field full"><label for="f-short">Short description</label><input class="input" id="f-short" value="${UI.esc(p.short)}"></div>
+              <div class="field full"><label for="f-desc">Full description</label><textarea class="textarea" id="f-desc">${UI.esc(p.desc)}</textarea></div>
+              <label class="checkbox full"><input type="checkbox" id="f-featured" ${p.featured ? 'checked' : ''}> Feature on homepage</label>
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-outline" onclick="UI.closeModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary">${isNew ? 'Add Product' : 'Save Changes'}</button>
+            </div>
+          </form>`);
+
+        const $ = (id) => m.querySelector('#' + id);
+        const preview = () => { $('preview').innerHTML = UI.art({ name: $('f-name').value, art: $('f-art').value, colors: [$('f-c1').value, $('f-c2').value] }); };
+        ['f-art', 'f-c1', 'f-c2'].forEach((id) => $(id).addEventListener('input', preview));
+        preview();
+
+        $('pform').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const name = $('f-name').value.trim();
+          const price = parseFloat($('f-price').value);
+          const stock = parseInt($('f-stock').value, 10);
+          const old = parseFloat($('f-old').value);
+          if (!name || !(price > 0) || !(stock >= 0)) { UI.toast('Please enter a name, price and stock', 'error'); return; }
+          if (old && old <= price) { UI.toast('Original price must be higher than the selling price', 'error'); return; }
+          const list = Store.products();
+          const data = {
+            name, price, stock, oldPrice: old || null,
+            category: $('f-cat').value, art: $('f-art').value, colors: [$('f-c1').value, $('f-c2').value],
+            short: $('f-short').value.trim(), desc: $('f-desc').value.trim() || $('f-short').value.trim(), featured: $('f-featured').checked
+          };
+          let id = p.id;
+          if (isNew) {
+            const max = list.reduce((m, x) => Math.max(m, parseInt(x.id.replace(/\D/g, ''), 10) || 0), 1000);
+            id = 'P' + (max + 1);
+            list.unshift(Object.assign({}, p, data, { id }));
+          } else {
+            Object.assign(list.find((x) => x.id === p.id), data);
+          }
+          Store.saveProducts(list);
+          UI.closeModal();
+          UI.toast(isNew ? `${name} added` : `${name} updated`);
+          render(id);
+        });
+      }
+
+      root.addEventListener('click', (e) => {
+        const ed = e.target.closest('[data-edit]');
+        const del = e.target.closest('[data-delete]');
+        if (ed) productForm(Store.product(ed.dataset.edit));
+        if (del) {
+          const p = Store.product(del.dataset.delete);
+          if (p && confirm(`Delete "${p.name}"? It will be removed from the storefront.`)) {
+            Store.saveProducts(Store.products().filter((x) => x.id !== p.id));
+            UI.toast(`${p.name} deleted`);
+            render();
+          }
+        }
+      });
+      root.addEventListener('change', (e) => {
+        const f = e.target.dataset.feature;
+        if (!f) return;
+        const list = Store.products();
+        const p = list.find((x) => x.id === f);
+        p.featured = e.target.checked;
+        Store.saveProducts(list);
+        UI.toast(`${p.name} ${p.featured ? 'featured on' : 'removed from'} homepage`);
+      });
+      document.getElementById('add-product').addEventListener('click', () => productForm(null));
+      document.getElementById('q').addEventListener('input', (e) => { state.q = e.target.value; render(); });
+      document.getElementById('cat').addEventListener('change', (e) => { state.cat = e.target.value; render(); });
+      render();
+    }
+  </script>
+</body>
+</html>

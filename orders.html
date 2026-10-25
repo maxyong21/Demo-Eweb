@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Orders — VoltHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-base="">
+  <div id="site-header"></div>
+
+  <main class="container" style="padding-bottom:64px">
+    <div class="page-head" style="padding-bottom:24px">
+      <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><span>My Orders</span></div>
+      <h1>My Orders</h1>
+      <p class="muted" id="sub"></p>
+    </div>
+    <div id="orders"></div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script>
+    if (Store.requireRole('customer')) {
+      UI.renderHeader('');
+      UI.renderFooter();
+      const I = UI.ICONS;
+      const u = Store.user();
+      const openId = new URLSearchParams(location.search).get('id');
+      const list = Store.orders().filter((o) => o.customerId === u.customerId);
+      document.getElementById('sub').textContent = `Hi ${u.name}, you have ${list.length} order${list.length === 1 ? '' : 's'}.`;
+      const root = document.getElementById('orders');
+
+      function timeline(o) {
+        if (o.status === 'Cancelled') {
+          const c = o.history.find((h) => h.status === 'Cancelled');
+          return `<div class="cancel-note">This order was cancelled on ${Store.formatDate(c ? c.at : o.createdAt, true)}.</div>`;
+        }
+        const idx = Store.STATUSES.indexOf(o.status);
+        const labels = { Pending: 'Order placed', Processing: 'Processing', Shipped: 'Shipped', Delivered: 'Delivered' };
+        return `<div class="timeline">${Store.STATUSES.map((s, i) => {
+          const h = o.history.find((x) => x.status === s);
+          return `<div class="tl-step ${i <= idx ? 'done' : ''}"><span class="tl-dot">${i <= idx ? I.check : ''}</span><b>${labels[s]}</b><small>${h ? Store.formatDate(h.at, true) : '—'}</small></div>`;
+        }).join('')}</div>`;
+      }
+
+      if (!list.length) {
+        root.innerHTML = `<div class="empty"><div class="empty-ic">${I.box}</div><h3>No orders yet</h3><p>When you place an order it will appear here.</p><a href="shop.html" class="btn btn-primary">Start Shopping</a></div>`;
+      } else {
+        root.innerHTML = list.map((o) => `
+          <article class="order-card ${o.id === openId ? 'open' : ''}" id="${o.id}">
+            <div class="order-head">
+              <div><small>Order</small><b>${o.id}</b></div>
+              <div><small>Placed on</small><b>${Store.formatDate(o.createdAt)}</b></div>
+              <div><small>Total</small><b>${Store.formatRM(o.total)}</b></div>
+              <div><small>Payment</small><b>${UI.esc(o.payment)}</b></div>
+              ${UI.statusBadge(o.status)}
+            </div>
+            <div class="order-body">
+              <div class="order-thumbs">${o.items.slice(0, 3).map((i) => `<div class="cart-thumb">${UI.art(i)}</div>`).join('')}</div>
+              <div class="grow">${o.items.map((i) => `${UI.esc(i.name)} × ${i.qty}`).join(', ')}</div>
+              <button class="btn btn-outline btn-sm" data-toggle="${o.id}">${o.id === openId ? 'Hide details' : 'View details'}</button>
+            </div>
+            <div class="order-detail">
+              ${timeline(o)}
+              <div class="detail-grid">
+                <div>
+                  <h4>Items</h4>
+                  ${o.items.map((i) => `<div class="mini-item"><div class="cart-thumb">${UI.art(i)}<span class="qty-badge">${i.qty}</span></div><div class="mi-name"><a href="product.html?id=${i.id}">${UI.esc(i.name)}</a><div class="muted" style="font-weight:400;font-size:13px">${Store.formatRM(i.price)} each</div></div><div class="mi-price">${Store.formatRM(i.price * i.qty)}</div></div>`).join('')}
+                </div>
+                <div>
+                  <div class="detail-block"><h4>Shipping address</h4>${UI.esc(o.customerName)}<br>${UI.esc(o.address.line1)}<br>${UI.esc(o.address.postcode)} ${UI.esc(o.address.city)}, ${UI.esc(o.address.state)}<br>${UI.esc(o.phone)}</div>
+                  <div class="detail-block"><h4>Delivery</h4>${o.shippingMethod === 'express' ? 'Express (next working day)' : 'Standard (2–4 working days)'}${o.status === 'Shipped' || o.status === 'Delivered' ? `<br>Tracking no: <b>JT${o.id.replace(/\D/g, '')}MY</b>` : ''}</div>
+                  <div class="detail-block">
+                    <div class="summary-row"><span>Subtotal</span><span>${Store.formatRM(o.subtotal)}</span></div>
+                    ${o.discount ? `<div class="summary-row discount"><span>Discount (${o.coupon})</span><span>− ${Store.formatRM(o.discount)}</span></div>` : ''}
+                    <div class="summary-row"><span>Shipping</span><span>${o.shipping ? Store.formatRM(o.shipping) : 'FREE'}</span></div>
+                    <div class="summary-row"><span>SST</span><span>${Store.formatRM(o.tax)}</span></div>
+                    <div class="summary-row total"><span>Total</span><span>${Store.formatRM(o.total)}</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>`).join('');
+
+        root.addEventListener('click', (e) => {
+          const b = e.target.closest('[data-toggle]');
+          if (!b) return;
+          const card = document.getElementById(b.dataset.toggle);
+          card.classList.toggle('open');
+          b.textContent = card.classList.contains('open') ? 'Hide details' : 'View details';
+        });
+        if (openId && document.getElementById(openId)) document.getElementById(openId).scrollIntoView({ block: 'start' });
+      }
+    }
+  </script>
+</body>
+</html>

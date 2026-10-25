@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login — VoltHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-base="">
+  <div id="site-header"></div>
+
+  <main class="auth-wrap">
+    <section class="auth-side">
+      <span class="eyebrow">⚡ Welcome to VoltHub</span>
+      <h2>Your favourite gadgets, one login away.</h2>
+      <p>Track your orders, save your address for faster checkout and get member-only deals.</p>
+      <div class="auth-arts" id="auth-arts"></div>
+    </section>
+
+    <section class="auth-main">
+      <div class="auth-card">
+        <h1>Sign in</h1>
+        <p class="muted">Customers and administrators sign in here.</p>
+        <form id="login-form">
+          <div id="msg"></div>
+          <div class="field"><label for="username">Username</label><input class="input" id="username" autocomplete="username" required autofocus></div>
+          <div class="field">
+            <label for="password">Password</label>
+            <div class="pw-wrap"><input class="input" id="password" type="password" autocomplete="current-password" required><button type="button" class="pw-toggle" id="pw-toggle">Show</button></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <label class="checkbox"><input type="checkbox" checked> Remember me</label>
+            <a href="#" class="link" style="font-size:14px" onclick="UI.toast('Demo only — use the credentials below');return false">Forgot password?</a>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit" style="height:50px">Sign in</button>
+        </form>
+
+        <div class="demo-creds">
+          <h4>Demo accounts</h4>
+          <div class="cred">
+            <div><b>Customer</b><code>user</code> / <code>user123</code></div>
+            <button class="btn btn-outline btn-sm" data-fill="user">Use</button>
+          </div>
+          <div class="cred">
+            <div><b>Admin</b><code>admin</code> / <code>admin123</code></div>
+            <button class="btn btn-outline btn-sm" data-fill="admin">Use</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script>
+    UI.renderHeader('');
+    const params = new URLSearchParams(location.search);
+    const raw = params.get('redirect') || '';
+    // Only allow simple relative page paths
+    const redirect = /^(admin\/)?[\w-]+\.html(\?[\w=&%.-]*)?$/.test(raw) ? raw : '';
+    const msg = document.getElementById('msg');
+    const current = Store.user();
+
+    if (redirect) {
+      const forAdmin = redirect.startsWith('admin/');
+      msg.innerHTML = `<div class="alert alert-info">${forAdmin ? 'Please sign in as an <b>admin</b> to access the admin panel.' : 'Please sign in as a <b>customer</b> to continue.'}</div>`;
+    } else if (current) {
+      msg.innerHTML = `<div class="alert alert-info">You are signed in as <b>${UI.esc(current.name)}</b>. Sign in again to switch account.</div>`;
+    }
+
+    document.getElementById('auth-arts').innerHTML = ['P1001', 'P1006', 'P1009'].map((id) => UI.art(Store.product(id) || DATA.products[0])).join('');
+
+    const creds = { user: 'user123', admin: 'admin123' };
+    document.querySelectorAll('[data-fill]').forEach((b) => b.addEventListener('click', () => {
+      document.getElementById('username').value = b.dataset.fill;
+      document.getElementById('password').value = creds[b.dataset.fill];
+      document.getElementById('login-form').requestSubmit();
+    }));
+
+    document.getElementById('pw-toggle').addEventListener('click', (e) => {
+      const pw = document.getElementById('password');
+      pw.type = pw.type === 'password' ? 'text' : 'password';
+      e.target.textContent = pw.type === 'password' ? 'Show' : 'Hide';
+    });
+
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const r = Store.login(document.getElementById('username').value, document.getElementById('password').value);
+      if (!r.ok) {
+        msg.innerHTML = `<div class="alert alert-error">${r.msg}. Try <b>user / user123</b> or <b>admin / admin123</b>.</div>`;
+        return;
+      }
+      const isAdmin = r.user.role === 'admin';
+      const fits = redirect && redirect.startsWith('admin/') === isAdmin;
+      location.href = fits ? redirect : (isAdmin ? 'admin/index.html' : 'shop.html');
+    });
+  </script>
+</body>
+</html>

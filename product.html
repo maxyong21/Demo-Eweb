@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Product — VoltHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-base="">
+  <div id="site-header"></div>
+
+  <main class="container" id="page"></main>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script>
+    const p = Store.product(new URLSearchParams(location.search).get('id'));
+    UI.renderHeader(p && ['smartphones', 'laptops', 'audio'].includes(p.category) ? p.category : 'shop');
+    UI.renderFooter();
+    const page = document.getElementById('page');
+    const I = UI.ICONS;
+
+    if (!p) {
+      page.innerHTML = `<div class="section"><div class="empty"><div class="empty-ic">${I.box}</div><h3>Product not found</h3><p>This product may have been removed.</p><a href="shop.html" class="btn btn-primary">Back to shop</a></div></div>`;
+    } else {
+      document.title = p.name + ' — VoltHub';
+      const cat = Store.category(p.category);
+      const off = UI.discountPct(p);
+      const [c1, c2] = p.colors;
+      const views = [[c1, c2], [c2, c1], ['#0f172a', c1], ['#e2e8f0', c2]];
+      const stock = p.stock <= 0 ? '<span class="stock out">Out of stock</span>'
+        : p.stock < 10 ? `<span class="stock low">Hurry, only ${p.stock} left in stock</span>`
+        : `<span class="stock in">In stock — ships within 24 hours</span>`;
+      const related = Store.products().filter((x) => x.category === p.category && x.id !== p.id)
+        .concat(Store.products().filter((x) => x.category !== p.category && x.featured))
+        .slice(0, 4);
+
+      page.innerHTML = `
+        <div class="page-head" style="padding-bottom:12px">
+          <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><a href="shop.html?cat=${cat.id}">${cat.name}</a><span>/</span><span>${UI.esc(p.name)}</span></div>
+        </div>
+        <div class="pd">
+          <div class="pd-gallery">
+            <div class="pd-main" id="pd-main">${UI.art(p)}</div>
+            <div class="pd-thumbs">${views.map((v, i) => `<button class="${i === 0 ? 'active' : ''}" data-view="${i}" aria-label="View ${i + 1}">${UI.art(Object.assign({}, p, { colors: v }))}</button>`).join('')}</div>
+          </div>
+          <div class="pd-info">
+            <div class="pc-cat">${cat.name}</div>
+            <h1>${UI.esc(p.name)}</h1>
+            <div class="pd-rating">${UI.stars(p.rating)}<b style="color:var(--text)">${p.rating}</b><span>· ${p.reviews.toLocaleString()} reviews</span><span>· SKU ${p.id}</span></div>
+            <div class="pd-price">
+              <span class="price">${Store.formatRM(p.price)}</span>
+              ${p.oldPrice ? `<span class="price-old">${Store.formatRM(p.oldPrice)}</span><span class="save-pill">Save ${Store.formatRM(p.oldPrice - p.price)} (${off}%)</span>` : ''}
+            </div>
+            <div class="hint">Inclusive of all prices. SST calculated at checkout. Or 3 monthly payments of <b>${Store.formatRM(p.price / 3)}</b> with 0% interest.</div>
+            <p class="pd-short">${UI.esc(p.short)}</p>
+            ${stock}
+            <div class="pd-buy">
+              <div class="qty">
+                <button data-step="-1" aria-label="Decrease">${I.minus}</button>
+                <input type="number" id="qty" value="1" min="1" max="${Math.max(1, p.stock)}" aria-label="Quantity">
+                <button data-step="1" aria-label="Increase">${I.plus}</button>
+              </div>
+              <button class="btn btn-dark" id="add-btn" ${p.stock <= 0 ? 'disabled' : ''}>${I.cart} Add to Cart</button>
+              <button class="btn btn-primary" id="buy-btn" ${p.stock <= 0 ? 'disabled' : ''}>Buy Now</button>
+            </div>
+            <div class="pd-perks">
+              <div>${I.truck}<span><b>Free next-day delivery</b><br>Orders above RM 500</span></div>
+              <div>${I.shield}<span><b>${UI.esc(p.specs.Warranty || '1 Year Official')}</b><br>Warranty included</span></div>
+              <div>${I.refresh}<span><b>30-day returns</b><br>No questions asked</span></div>
+              <div>${I.lock}<span><b>Secure checkout</b><br>FPX, cards &amp; COD</span></div>
+            </div>
+          </div>
+        </div>
+
+        <section style="padding-bottom:48px">
+          <div class="tabs">
+            <button class="tab active" data-tab="desc">Description</button>
+            <button class="tab" data-tab="specs">Specifications</button>
+            <button class="tab" data-tab="reviews">Reviews (${p.reviews.toLocaleString()})</button>
+          </div>
+          <div class="tab-panel active" id="tab-desc"><p style="max-width:780px;color:var(--text-2);font-size:16px">${UI.esc(p.desc)}</p></div>
+          <div class="tab-panel" id="tab-specs" style="max-width:780px">
+            <table class="spec-table">${Object.entries(p.specs).map(([k, v]) => `<tr><th>${UI.esc(k)}</th><td>${UI.esc(v)}</td></tr>`).join('')}</table>
+          </div>
+          <div class="tab-panel" id="tab-reviews" style="max-width:780px">
+            ${DATA.reviews.map((r) => `<div class="review"><div class="review-head"><b><span class="avatar">${r.name[0]}</span>${r.name}</b><span class="muted" style="font-size:13px">${r.date}</span></div>${UI.stars(r.rating)}<p style="margin-top:8px;color:var(--text-2)">${r.text}</p></div>`).join('')}
+          </div>
+        </section>
+
+        <section style="padding-bottom:40px">
+          <div class="section-head"><div><h2>You may also like</h2></div></div>
+          <div class="grid">${related.map(UI.productCard).join('')}</div>
+        </section>`;
+
+      const qty = document.getElementById('qty');
+      const clamp = () => { qty.value = Math.min(Math.max(1, parseInt(qty.value, 10) || 1), Math.max(1, p.stock)); };
+      qty.addEventListener('change', clamp);
+      page.addEventListener('click', (e) => {
+        const step = e.target.closest('[data-step]');
+        if (step) { qty.value = (parseInt(qty.value, 10) || 1) + Number(step.dataset.step); clamp(); }
+        const view = e.target.closest('[data-view]');
+        if (view) {
+          document.querySelectorAll('[data-view]').forEach((b) => b.classList.toggle('active', b === view));
+          document.getElementById('pd-main').innerHTML = UI.art(Object.assign({}, p, { colors: views[view.dataset.view] }));
+        }
+        const tab = e.target.closest('[data-tab]');
+        if (tab) {
+          document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
+          document.querySelectorAll('.tab-panel').forEach((t) => t.classList.toggle('active', t.id === 'tab-' + tab.dataset.tab));
+        }
+      });
+      const add = () => { const r = Store.addToCart(p.id, qty.value); UI.toast(r.msg, r.ok ? (r.capped ? 'warning' : 'success') : 'error'); UI.updateCartBadge(); return r.ok; };
+      document.getElementById('add-btn').addEventListener('click', add);
+      document.getElementById('buy-btn').addEventListener('click', () => { if (add()) location.href = 'cart.html'; });
+    }
+  </script>
+</body>
+</html>

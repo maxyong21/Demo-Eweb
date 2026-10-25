@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VoltHub — Genuine Gadgets, Delivered Fast</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-base="">
+  <div id="site-header"></div>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero-inner">
+        <div>
+          <span class="eyebrow">⚡ New arrival · Nova X12 Pro</span>
+          <h1>Next-gen tech,<br><span>delivered tomorrow.</span></h1>
+          <p>Shop the latest smartphones, laptops, audio and wearables — 100% genuine with official Malaysian warranty and free next-day delivery.</p>
+          <div class="hero-cta">
+            <a href="shop.html" class="btn btn-primary">Shop Now</a>
+            <a href="product.html?id=P1001" class="btn btn-outline">View Nova X12 Pro</a>
+          </div>
+          <div class="hero-stats">
+            <div><b>50K+</b><span>Happy customers</span></div>
+            <div><b>4.8★</b><span>Average rating</span></div>
+            <div><b>24h</b><span>Fast delivery</span></div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-card" id="hero-art"></div>
+          <div class="hero-chip chip-1"><span class="chip-ic" id="chip-truck"></span><div><b>Free delivery</b>Orders above RM 500</div></div>
+          <div class="hero-chip chip-2"><span class="chip-ic" id="chip-shield"></span><div><b>Official warranty</b>Up to 2 years</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Perks -->
+    <section class="section-sm">
+      <div class="container perks" id="perks"></div>
+    </section>
+
+    <!-- Categories -->
+    <section class="section" style="padding-top:20px">
+      <div class="container">
+        <div class="section-head">
+          <div><h2>Shop by Category</h2><p>Find exactly what you are looking for</p></div>
+          <a href="shop.html" class="link">View all →</a>
+        </div>
+        <div class="cat-grid" id="categories"></div>
+      </div>
+    </section>
+
+    <!-- Featured -->
+    <section class="section" style="padding-top:0">
+      <div class="container">
+        <div class="section-head">
+          <div><h2>Featured Products</h2><p>Hand-picked by our team this month</p></div>
+          <a href="shop.html" class="link">See more →</a>
+        </div>
+        <div class="grid" id="featured"></div>
+      </div>
+    </section>
+
+    <!-- Promos -->
+    <section class="section" style="padding-top:0">
+      <div class="container promo-grid">
+        <div class="promo promo-a">
+          <div class="promo-content">
+            <span class="eyebrow">Limited time</span>
+            <h3>Laptops up to RM 500 off</h3>
+            <p>Upgrade your work and study setup with the AeroBook Air 14.</p>
+            <a href="product.html?id=P1004" class="btn btn-light">Shop Laptops</a>
+          </div>
+          <div id="promo-art-a"></div>
+        </div>
+        <div class="promo promo-b">
+          <div class="promo-content">
+            <span class="eyebrow">New customer</span>
+            <h3>Extra 10% off</h3>
+            <p>Use code <span class="code-pill">DEMO10</span> at checkout.</p>
+            <a href="shop.html?cat=audio" class="btn btn-light">Shop Audio</a>
+          </div>
+          <div id="promo-art-b"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Best sellers -->
+    <section class="section" style="padding-top:0">
+      <div class="container">
+        <div class="section-head">
+          <div><h2>Best Sellers</h2><p>Most loved by Malaysian shoppers</p></div>
+          <a href="shop.html?sort=popular" class="link">See more →</a>
+        </div>
+        <div class="grid" id="bestsellers"></div>
+      </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="section" style="padding-top:0">
+      <div class="container">
+        <div class="newsletter">
+          <div>
+            <h3>Get exclusive deals first</h3>
+            <p class="muted">Subscribe and receive RM 50 off your first order above RM 300.</p>
+          </div>
+          <form id="newsletter-form">
+            <input class="input" type="email" placeholder="Enter your email" required aria-label="Email">
+            <button class="btn btn-primary" type="submit">Subscribe</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script>
+    UI.renderHeader('home');
+    UI.renderFooter();
+
+    const products = Store.products();
+    const hero = Store.product('P1001') || products[0];
+    document.getElementById('hero-art').innerHTML = UI.art(hero);
+    document.getElementById('chip-truck').innerHTML = UI.ICONS.truck;
+    document.getElementById('chip-shield').innerHTML = UI.ICONS.shield;
+
+    document.getElementById('perks').innerHTML = [
+      ['truck', 'Free Delivery', 'On orders above RM 500'],
+      ['shield', 'Official Warranty', '100% genuine products'],
+      ['refresh', '30-Day Returns', 'Hassle-free exchanges'],
+      ['headset', '24/7 Support', 'Live chat & WhatsApp']
+    ].map(([ic, t, s]) => `<div class="perk"><span class="perk-ic">${UI.ICONS[ic]}</span><div><b>${t}</b><span>${s}</span></div></div>`).join('');
+
+    document.getElementById('categories').innerHTML = DATA.categories.map((c) => {
+      const n = products.filter((p) => p.category === c.id).length;
+      return `<a class="cat-tile" href="shop.html?cat=${c.id}">${UI.art({ name: c.name, art: c.art, colors: c.colors })}<b>${c.name}</b><span>${n} item${n === 1 ? '' : 's'}</span></a>`;
+    }).join('');
+
+    document.getElementById('featured').innerHTML = products.filter((p) => p.featured).slice(0, 8).map(UI.productCard).join('');
+    document.getElementById('bestsellers').innerHTML = products.slice().sort((a, b) => b.reviews - a.reviews).slice(0, 4).map(UI.productCard).join('');
+
+    document.getElementById('promo-art-a').innerHTML = UI.art(Store.product('P1004') || products[0]);
+    document.getElementById('promo-art-b').innerHTML = UI.art(Store.product('P1006') || products[0]);
+
+    document.getElementById('newsletter-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      e.target.reset();
+      UI.toast('Thanks for subscribing! Use code WELCOME50 on your first order.');
+    });
+  </script>
+</body>
+</html>

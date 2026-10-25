@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shop All — VoltHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-base="">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <div class="page-head">
+      <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><span id="crumb">Shop</span></div>
+      <h1 id="page-title">Shop All Products</h1>
+    </div>
+
+    <div class="shop-layout">
+      <aside class="filters" id="filters">
+        <div class="filter-group">
+          <h4>Category</h4>
+          <div class="filter-list" id="cat-filter"></div>
+        </div>
+        <div class="filter-group">
+          <h4>Price</h4>
+          <div class="filter-list" id="price-filter"></div>
+        </div>
+        <div class="filter-group">
+          <h4>Availability</h4>
+          <label class="checkbox"><input type="checkbox" id="instock"> In stock only</label>
+          <label class="checkbox" style="margin-top:10px"><input type="checkbox" id="deals"> On sale</label>
+        </div>
+      </aside>
+
+      <section>
+        <div class="toolbar">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm filter-toggle" id="filter-toggle">Filters</button>
+            <span class="muted" id="count"></span>
+            <div class="chips" id="chips"></div>
+          </div>
+          <select class="select" id="sort" aria-label="Sort products">
+            <option value="featured">Sort: Featured</option>
+            <option value="popular">Most popular</option>
+            <option value="rating">Top rated</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+          </select>
+        </div>
+        <div class="grid grid-3" id="results"></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const PRICES = [
+      { id: 'all', label: 'Any price', min: 0, max: Infinity },
+      { id: 'u500', label: 'Under RM 500', min: 0, max: 500 },
+      { id: '500-1500', label: 'RM 500 – RM 1,500', min: 500, max: 1500 },
+      { id: '1500-4000', label: 'RM 1,500 – RM 4,000', min: 1500, max: 4000 },
+      { id: 'o4000', label: 'Above RM 4,000', min: 4000, max: Infinity }
+    ];
+    const state = {
+      q: params.get('q') || '',
+      cat: params.get('cat') || 'all',
+      price: params.get('price') || 'all',
+      sort: params.get('sort') || 'featured',
+      instock: params.get('instock') === '1',
+      deals: params.get('deals') === '1'
+    };
+
+    UI.renderHeader(state.deals ? 'deals' : (['smartphones', 'laptops', 'audio'].includes(state.cat) ? state.cat : 'shop'));
+    UI.renderFooter();
+
+    const products = Store.products();
+    const $ = (id) => document.getElementById(id);
+
+    function syncUrl() {
+      const p = new URLSearchParams();
+      if (state.q) p.set('q', state.q);
+      if (state.cat !== 'all') p.set('cat', state.cat);
+      if (state.price !== 'all') p.set('price', state.price);
+      if (state.sort !== 'featured') p.set('sort', state.sort);
+      if (state.instock) p.set('instock', '1');
+      if (state.deals) p.set('deals', '1');
+      history.replaceState(null, '', 'shop.html' + (p.toString() ? '?' + p : ''));
+    }
+
+    function render() {
+      const range = PRICES.find((r) => r.id === state.price) || PRICES[0];
+      const q = state.q.toLowerCase();
+      let list = products.filter((p) =>
+        (state.cat === 'all' || p.category === state.cat) &&
+        p.price >= range.min && p.price < range.max &&
+        (!state.instock || p.stock > 0) &&
+        (!state.deals || UI.discountPct(p) > 0) &&
+        (!q || (p.name + ' ' + p.short + ' ' + Store.category(p.category).name).toLowerCase().includes(q))
+      );
+      const sorters = {
+        featured: (a, b) => (b.featured - a.featured) || (b.reviews - a.reviews),
+        popular: (a, b) => b.reviews - a.reviews,
+        rating: (a, b) => b.rating - a.rating,
+        'price-asc': (a, b) => a.price - b.price,
+        'price-desc': (a, b) => b.price - a.price
+      };
+      list.sort(sorters[state.sort] || sorters.featured);
+
+      // Category list
+      $('cat-filter').innerHTML = [{ id: 'all', name: 'All products' }].concat(DATA.categories).map((c) => {
+        const n = c.id === 'all' ? products.length : products.filter((p) => p.category === c.id).length;
+        return `<button class="filter-item ${state.cat === c.id ? 'active' : ''}" data-cat="${c.id}">${c.name}<small>${n}</small></button>`;
+      }).join('');
+      $('price-filter').innerHTML = PRICES.map((r) => `<button class="filter-item ${state.price === r.id ? 'active' : ''}" data-price="${r.id}">${r.label}</button>`).join('');
+      $('instock').checked = state.instock;
+      $('deals').checked = state.deals;
+      $('sort').value = state.sort;
+
+      // Title + crumbs
+      const catName = state.cat !== 'all' ? Store.category(state.cat).name : null;
+      $('page-title').textContent = state.q ? `Results for “${state.q}”` : state.deals ? 'Hot Deals' : (catName || 'Shop All Products');
+      $('crumb').textContent = catName || 'Shop';
+      document.title = $('page-title').textContent + ' — VoltHub';
+
+      // Chips
+      const chips = [];
+      if (state.q) chips.push(['q', `“${state.q}”`]);
+      if (catName) chips.push(['cat', catName]);
+      if (state.price !== 'all') chips.push(['price', range.label]);
+      if (state.instock) chips.push(['instock', 'In stock']);
+      if (state.deals) chips.push(['deals', 'On sale']);
+      $('chips').innerHTML = chips.map(([k, l]) => `<span class="chip">${UI.esc(l)}<button data-clear="${k}" aria-label="Remove filter">${UI.ICONS.close}</button></span>`).join('');
+
+      $('count').textContent = `${list.length} product${list.length === 1 ? '' : 's'}`;
+      $('results').innerHTML = list.length
+        ? list.map(UI.productCard).join('')
+        : `<div class="empty" style="grid-column:1/-1"><div class="empty-ic">${UI.ICONS.search}</div><h3>No products found</h3><p>Try a different search or clear your filters.</p><button class="btn btn-primary" data-clear="all">Clear all filters</button></div>`;
+      syncUrl();
+    }
+
+    document.addEventListener('click', (e) => {
+      const cat = e.target.closest('[data-cat]');
+      const price = e.target.closest('[data-price]');
+      const clear = e.target.closest('[data-clear]');
+      if (cat) { state.cat = cat.dataset.cat; render(); }
+      if (price) { state.price = price.dataset.price; render(); }
+      if (clear) {
+        const k = clear.dataset.clear;
+        if (k === 'all') Object.assign(state, { q: '', cat: 'all', price: 'all', instock: false, deals: false });
+        else if (k === 'q') { state.q = ''; document.querySelector('.search input').value = ''; }
+        else if (k === 'cat' || k === 'price') state[k] = 'all';
+        else state[k] = false;
+        render();
+      }
+    });
+    $('instock').addEventListener('change', (e) => { state.instock = e.target.checked; render(); });
+    $('deals').addEventListener('change', (e) => { state.deals = e.target.checked; render(); });
+    $('sort').addEventListener('change', (e) => { state.sort = e.target.value; render(); });
+    $('filter-toggle').addEventListener('click', () => $('filters').classList.toggle('open'));
+
+    render();
+  </script>
+</body>
+</html>

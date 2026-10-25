@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Customers — VoltHub Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body data-base="../">
+  <div id="admin-app"></div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/store.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/admin.js"></script>
+  <script>
+    const root = Admin.mount('customers', 'Customers', 'Your registered customers and their activity');
+    if (root) {
+      const orders = Store.orders();
+      const customers = DATA.customers.map((c) => {
+        const mine = orders.filter((o) => o.customerId === c.id);
+        const valid = mine.filter((o) => o.status !== 'Cancelled');
+        return Object.assign({}, c, {
+          orders: mine,
+          count: mine.length,
+          spent: valid.reduce((s, o) => s + o.total, 0),
+          last: mine.length ? mine.reduce((a, o) => (o.createdAt > a ? o.createdAt : a), mine[0].createdAt) : null
+        });
+      }).sort((a, b) => b.spent - a.spent);
+      const total = customers.reduce((s, c) => s + c.spent, 0);
+
+      root.innerHTML = `
+        ${Admin.demoBanner()}
+        <div class="kpis">
+          <div class="kpi"><div class="kpi-top">Customers<span class="kpi-ic ic-blue">${UI.ICONS.users}</span></div><div class="kpi-value">${customers.length}</div><div class="kpi-foot">Registered accounts</div></div>
+          <div class="kpi"><div class="kpi-top">Repeat buyers<span class="kpi-ic ic-purple">${UI.ICONS.refresh}</span></div><div class="kpi-value">${customers.filter((c) => c.count > 1).length}</div><div class="kpi-foot">Placed 2+ orders</div></div>
+          <div class="kpi"><div class="kpi-top">Lifetime value<span class="kpi-ic ic-green">${UI.ICONS.dollar}</span></div><div class="kpi-value">${Store.formatRM(total / customers.length)}</div><div class="kpi-foot">Average per customer</div></div>
+          <div class="kpi"><div class="kpi-top">Top customer<span class="kpi-ic ic-orange">${UI.ICONS.star}</span></div><div class="kpi-value" style="font-size:20px;margin-top:16px">${UI.esc(customers[0].name)}</div><div class="kpi-foot">${Store.formatRM(customers[0].spent)} spent</div></div>
+        </div>
+        <div class="admin-toolbar">
+          <div class="search"><input type="search" id="q" placeholder="Search name, email, city…" aria-label="Search customers"><button type="button" aria-label="Search">${UI.ICONS.search}</button></div>
+        </div>
+        <div class="card">
+          <div class="table-wrap" style="margin-top:-22px">
+            <table class="table">
+              <thead><tr><th>Customer</th><th>Phone</th><th>Location</th><th>Joined</th><th class="num">Orders</th><th class="num">Total spent</th><th>Last order</th><th></th></tr></thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </div>`;
+
+      function render(q) {
+        q = (q || '').toLowerCase();
+        const list = customers.filter((c) => !q || (c.name + ' ' + c.email + ' ' + c.city + ' ' + c.state).toLowerCase().includes(q));
+        document.getElementById('rows').innerHTML = list.length ? list.map((c) => `
+          <tr>
+            <td><div class="cell-product"><span class="avatar">${c.name.split(' ').map((w) => w[0]).join('').slice(0, 2)}</span><div><b>${UI.esc(c.name)}${c.id === 'C001' ? ' <span class="status status-processing" style="margin-left:4px">Demo login</span>' : ''}</b><small>${UI.esc(c.email)}</small></div></div></td>
+            <td>${UI.esc(c.phone)}</td>
+            <td>${UI.esc(c.city)}, ${UI.esc(c.state)}</td>
+            <td>${Store.formatDate(c.joined)}</td>
+            <td class="num">${c.count}</td>
+            <td class="num"><b>${Store.formatRM(c.spent)}</b></td>
+            <td>${c.last ? Store.formatDate(c.last) : '—'}</td>
+            <td><div class="row-actions"><button class="icon-btn" data-cust="${c.id}" title="View orders" aria-label="View orders for ${UI.esc(c.name)}">${UI.ICONS.eye}</button></div></td>
+          </tr>`).join('') : `<tr><td colspan="8" style="text-align:center;padding:40px" class="muted">No customers found.</td></tr>`;
+      }
+
+      root.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-cust]');
+        if (!b) return;
+        const c = customers.find((x) => x.id === b.dataset.cust);
+        UI.openModal(`
+          <h2>${UI.esc(c.name)}</h2>
+          <p class="muted" style="font-size:14px">${UI.esc(c.email)} · ${UI.esc(c.phone)}<br>${UI.esc(c.line1)}, ${UI.esc(c.postcode)} ${UI.esc(c.city)}, ${UI.esc(c.state)}</p>
+          <div style="margin-top:20px">
+            ${c.orders.length ? c.orders.map((o) => `<a href="orders.html?id=${o.id}" class="summary-row" style="border-bottom:1px solid var(--border);padding:12px 0;align-items:center"><span><b style="color:var(--text)">${o.id}</b><br><small class="muted">${Store.formatDate(o.createdAt)}</small></span>${UI.statusBadge(o.status)}<b style="color:var(--text)">${Store.formatRM(o.total)}</b></a>`).join('') : '<p class="muted">No orders yet.</p>'}
+          </div>`);
+      });
+      document.getElementById('q').addEventListener('input', (e) => render(e.target.value));
+      render();
+    }
+  </script>
+</body>
+</html>

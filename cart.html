@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your Cart — VoltHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-base="">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <div class="page-head">
+      <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><span>Cart</span></div>
+      <h1>Shopping Cart</h1>
+    </div>
+    <div id="cart"></div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script>
+    UI.renderHeader('');
+    UI.renderFooter();
+    const I = UI.ICONS;
+    const root = document.getElementById('cart');
+    const S = DATA.settings;
+
+    function render() {
+      const items = Store.cartItems();
+      UI.updateCartBadge();
+      if (!items.length) {
+        root.innerHTML = `<div class="empty" style="margin:20px 0 64px"><div class="empty-ic">${I.cart}</div><h3>Your cart is empty</h3><p>Looks like you have not added anything yet.</p><a href="shop.html" class="btn btn-primary">Start Shopping</a></div>`;
+        return;
+      }
+      const t = Store.cartTotals('standard');
+      const coupon = Store.getCoupon();
+      const remaining = S.freeShippingMin - (t.subtotal - t.discount);
+      const pct = Math.min(100, ((t.subtotal - t.discount) / S.freeShippingMin) * 100);
+
+      root.innerHTML = `
+        <div class="cart-layout">
+          <div class="panel">
+            <div class="panel-title">${items.length} item${items.length === 1 ? '' : 's'} in your cart <button class="btn btn-ghost btn-sm" id="clear">Clear cart</button></div>
+            ${items.map((p) => `
+              <div class="cart-item">
+                <a class="cart-thumb" href="product.html?id=${p.id}">${UI.art(p)}</a>
+                <div class="cart-info">
+                  <a href="product.html?id=${p.id}">${UI.esc(p.name)}</a>
+                  <div class="muted">${Store.category(p.category).name} · ${Store.formatRM(p.price)} each</div>
+                  ${p.qty >= p.stock ? `<div class="hint" style="color:var(--warning)">Max available: ${p.stock}</div>` : ''}
+                  <div class="cart-controls">
+                    <div class="qty qty-sm">
+                      <button data-dec="${p.id}" aria-label="Decrease">${I.minus}</button>
+                      <input type="number" value="${p.qty}" min="1" max="${p.stock}" data-qty="${p.id}" aria-label="Quantity">
+                      <button data-inc="${p.id}" aria-label="Increase" ${p.qty >= p.stock ? 'disabled' : ''}>${I.plus}</button>
+                    </div>
+                    <button class="remove-btn" data-remove="${p.id}">${I.trash} Remove</button>
+                  </div>
+                </div>
+                <div class="cart-line-total">${Store.formatRM(p.price * p.qty)}</div>
+              </div>`).join('')}
+          </div>
+
+          <aside>
+            <div class="panel">
+              <div class="panel-title">Order Summary</div>
+              <div class="ship-progress">
+                ${remaining > 0 ? `Add <b>${Store.formatRM(remaining)}</b> more for <b>FREE shipping</b>` : '🎉 You have unlocked <b>FREE shipping</b>!'}
+                <div class="ship-bar"><span style="width:${pct}%"></span></div>
+              </div>
+              ${coupon && t.coupon
+                ? `<div class="coupon-applied"><span>Code <b>${coupon}</b> applied</span><button id="remove-coupon">Remove</button></div>`
+                : `<form class="coupon-form" id="coupon-form"><input class="input" id="coupon" placeholder="Coupon code" aria-label="Coupon code"><button class="btn btn-outline btn-sm" style="height:42px">Apply</button></form>
+                   <div class="hint" style="margin:-8px 0 14px">Try <b>DEMO10</b> or <b>WELCOME50</b></div>`}
+              <div class="summary-row"><span>Subtotal</span><span>${Store.formatRM(t.subtotal)}</span></div>
+              ${t.discount ? `<div class="summary-row discount"><span>Discount (${t.coupon})</span><span>− ${Store.formatRM(t.discount)}</span></div>` : ''}
+              <div class="summary-row"><span>Shipping</span><span>${t.shipping ? Store.formatRM(t.shipping) : 'FREE'}</span></div>
+              <div class="summary-row"><span>SST (${S.sstRate * 100}%)</span><span>${Store.formatRM(t.tax)}</span></div>
+              <div class="summary-row total"><span>Total</span><span>${Store.formatRM(t.total)}</span></div>
+              <a href="checkout.html" class="btn btn-primary btn-block" style="margin-top:18px;height:52px">Proceed to Checkout</a>
+              <a href="shop.html" class="btn btn-ghost btn-block" style="margin-top:8px">Continue Shopping</a>
+              <div class="secure-note">${I.lock} Secure checkout · Demo only, no real payment</div>
+            </div>
+          </aside>
+        </div>`;
+
+      const form = document.getElementById('coupon-form');
+      if (form) form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const r = Store.applyCoupon(document.getElementById('coupon').value);
+        UI.toast(r.msg, r.ok ? 'success' : 'error');
+        if (r.ok) render();
+      });
+    }
+
+    root.addEventListener('click', (e) => {
+      const t = e.target.closest('button');
+      if (!t) return;
+      const items = Store.cartItems();
+      const find = (id) => items.find((i) => i.id === id);
+      if (t.dataset.inc) Store.setQty(t.dataset.inc, find(t.dataset.inc).qty + 1);
+      else if (t.dataset.dec) Store.setQty(t.dataset.dec, find(t.dataset.dec).qty - 1);
+      else if (t.dataset.remove) { Store.removeFromCart(t.dataset.remove); UI.toast('Item removed from cart'); }
+      else if (t.id === 'clear') { Store.clearCart(); UI.toast('Cart cleared'); }
+      else if (t.id === 'remove-coupon') Store.removeCoupon();
+      else return;
+      render();
+    });
+    root.addEventListener('change', (e) => {
+      if (e.target.dataset.qty) { Store.setQty(e.target.dataset.qty, Math.max(1, parseInt(e.target.value, 10) || 1)); render(); }
+    });
+
+    render();
+  </script>
+</body>
+</html>

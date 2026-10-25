@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orders — VoltHub Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body data-base="../">
+  <div id="admin-app"></div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/store.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/admin.js"></script>
+  <script>
+    const root = Admin.mount('orders', 'Orders', 'View and manage customer orders');
+    if (root) {
+      const state = { status: 'All', q: '' };
+      root.innerHTML = `
+        ${Admin.demoBanner()}
+        <div class="admin-toolbar">
+          <div class="seg" id="seg"></div>
+          <div class="search"><input type="search" id="q" placeholder="Search order ID, customer, email…" aria-label="Search orders"><button type="button" aria-label="Search">${UI.ICONS.search}</button></div>
+        </div>
+        <div class="card">
+          <div class="table-wrap" style="margin-top:-22px">
+            <table class="table">
+              <thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Items</th><th>Payment</th><th>Status</th><th class="num">Total</th><th></th></tr></thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </div>`;
+
+      function render(highlight) {
+        const orders = Store.orders();
+        const statuses = ['All'].concat(Store.STATUSES, 'Cancelled');
+        document.getElementById('seg').innerHTML = statuses.map((s) => {
+          const n = s === 'All' ? orders.length : orders.filter((o) => o.status === s).length;
+          return `<button class="${state.status === s ? 'active' : ''}" data-status="${s}">${s}<span>${n}</span></button>`;
+        }).join('');
+        const q = state.q.toLowerCase();
+        const list = orders.filter((o) => (state.status === 'All' || o.status === state.status) &&
+          (!q || (o.id + ' ' + o.customerName + ' ' + o.email).toLowerCase().includes(q)));
+        document.getElementById('rows').innerHTML = list.length ? list.map((o) => `
+          <tr class="${o.id === highlight ? 'new-row' : ''}">
+            <td><b>${o.id}</b></td>
+            <td>${Store.formatDate(o.createdAt, true)}</td>
+            <td><b style="font-weight:600">${UI.esc(o.customerName)}</b><br><small class="muted">${UI.esc(o.email)}</small></td>
+            <td>${o.items.reduce((n, i) => n + i.qty, 0)} item(s)</td>
+            <td>${UI.esc(o.payment)}</td>
+            <td>${UI.statusBadge(o.status)}</td>
+            <td class="num"><b>${Store.formatRM(o.total)}</b></td>
+            <td><div class="row-actions"><button class="icon-btn" data-view="${o.id}" aria-label="View ${o.id}" title="View / update">${UI.ICONS.eye}</button></div></td>
+          </tr>`).join('') : `<tr><td colspan="8" style="text-align:center;padding:40px" class="muted">No orders match your filters.</td></tr>`;
+      }
+
+      root.addEventListener('click', (e) => {
+        const s = e.target.closest('[data-status]');
+        if (s) { state.status = s.dataset.status; render(); }
+        const v = e.target.closest('[data-view]');
+        if (v) Admin.orderModal(v.dataset.view, (o) => render(o.id));
+      });
+      document.getElementById('q').addEventListener('input', (e) => { state.q = e.target.value; render(); });
+
+      render();
+      const open = new URLSearchParams(location.search).get('id');
+      if (open) Admin.orderModal(open, (o) => render(o.id));
+    }
+  </script>
+</body>
+</html>

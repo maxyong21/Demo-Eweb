@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout — VoltHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-base="">
+  <div id="site-header"></div>
+
+  <main class="container" id="page"></main>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script>
+    if (Store.requireRole('customer')) {
+      UI.renderHeader('');
+      UI.renderFooter();
+      const I = UI.ICONS;
+      const S = DATA.settings;
+      const page = document.getElementById('page');
+      const u = Store.user();
+      const a = u.address || {};
+      let shipMethod = 'standard';
+      let payMethod = 'FPX Online Banking';
+
+      if (!Store.cartItems().length) {
+        page.innerHTML = `<div class="empty" style="margin:48px 0 64px"><div class="empty-ic">${I.cart}</div><h3>Your cart is empty</h3><p>Add some products before checking out.</p><a href="shop.html" class="btn btn-primary">Go to Shop</a></div>`;
+      } else {
+        page.innerHTML = `
+          <div class="page-head">
+            <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><a href="cart.html">Cart</a><span>/</span><span>Checkout</span></div>
+            <h1>Checkout</h1>
+            <div class="steps"><span>Cart</span><span>›</span><span class="on">Details &amp; Payment</span><span>›</span><span>Confirmation</span></div>
+          </div>
+          <form class="cart-layout" id="checkout-form" novalidate>
+            <div>
+              <div class="panel">
+                <div class="panel-title">1. Contact &amp; Shipping Address</div>
+                <div class="form-grid">
+                  <div class="field"><label for="name">Full name</label><input class="input" id="name" required value="${UI.esc(u.name)}"></div>
+                  <div class="field"><label for="phone">Phone</label><input class="input" id="phone" required value="${UI.esc(u.phone)}"></div>
+                  <div class="field full"><label for="email">Email</label><input class="input" id="email" type="email" required value="${UI.esc(u.email)}"></div>
+                  <div class="field full"><label for="line1">Address</label><input class="input" id="line1" required value="${UI.esc(a.line1 || '')}"></div>
+                  <div class="field"><label for="city">City</label><input class="input" id="city" required value="${UI.esc(a.city || '')}"></div>
+                  <div class="field"><label for="postcode">Postcode</label><input class="input" id="postcode" required inputmode="numeric" maxlength="5" value="${UI.esc(a.postcode || '')}"></div>
+                  <div class="field full"><label for="state">State</label><select class="select" id="state">${DATA.malaysianStates.map((s) => `<option ${s === a.state ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+                  <div class="field full"><label for="notes">Order notes (optional)</label><textarea class="textarea" id="notes" placeholder="e.g. Leave at the guardhouse"></textarea></div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-title">2. Delivery Method</div>
+                <div class="option-list" id="ship-options"></div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-title">3. Payment Method</div>
+                <div class="option-list" id="pay-options"></div>
+                <div class="pay-extra" id="pay-extra"></div>
+              </div>
+            </div>
+
+            <aside>
+              <div class="panel" style="position:sticky;top:90px">
+                <div class="panel-title">Order Summary <a href="cart.html" class="link" style="font-size:14px">Edit</a></div>
+                <div id="summary"></div>
+                <button type="submit" class="btn btn-primary btn-block" style="margin-top:18px;height:52px">${I.lock} Place Order</button>
+                <div class="secure-note">Demo checkout — no real payment will be charged</div>
+              </div>
+            </aside>
+          </form>`;
+
+        const $ = (id) => document.getElementById(id);
+
+        function renderShip() {
+          const t = Store.cartTotals('standard');
+          const std = t.shipping ? Store.formatRM(t.shipping) : 'FREE';
+          const exp = Store.formatRM(t.shipping + S.expressFee);
+          $('ship-options').innerHTML = [
+            ['standard', 'Standard Delivery', '2–4 working days · J&T / Pos Laju', std],
+            ['express', 'Express Delivery', 'Next working day · Klang Valley & Penang', exp]
+          ].map(([v, l, d, price]) => `<label class="option ${shipMethod === v ? 'selected' : ''}"><input type="radio" name="ship" value="${v}" ${shipMethod === v ? 'checked' : ''}><span class="opt-main"><b>${l}</b><span>${d}</span></span><span class="opt-side">${price}</span></label>`).join('');
+        }
+
+        function renderPay() {
+          $('pay-options').innerHTML = [
+            ['FPX Online Banking', 'Pay directly from your Malaysian bank account', 'FPX'],
+            ['Credit / Debit Card', 'Visa, Mastercard, AMEX', 'CARD'],
+            ['Cash on Delivery', 'Pay the courier when your order arrives', 'COD']
+          ].map(([v, d, tag]) => `<label class="option ${payMethod === v ? 'selected' : ''}"><input type="radio" name="pay" value="${v}" ${payMethod === v ? 'checked' : ''}><span class="opt-main"><b>${v}</b><span>${d}</span></span><span class="opt-side muted">${tag}</span></label>`).join('');
+          $('pay-extra').innerHTML = payMethod === 'FPX Online Banking'
+            ? `<div class="field"><label for="bank">Select your bank</label><select class="select" id="bank">${DATA.banks.map((b) => `<option>${b}</option>`).join('')}</select></div>`
+            : payMethod === 'Credit / Debit Card'
+            ? `<div class="form-grid"><div class="field full"><label for="card">Card number</label><input class="input" id="card" value="4242 4242 4242 4242"></div><div class="field"><label for="exp">Expiry</label><input class="input" id="exp" value="12/28"></div><div class="field"><label for="cvv">CVV</label><input class="input" id="cvv" value="123"></div></div><p class="hint" style="margin-top:10px">Demo card pre-filled. No real charge is made.</p>`
+            : `<p class="hint">A COD handling fee is waived for this demo. Please prepare the exact amount on delivery.</p>`;
+        }
+
+        function renderSummary() {
+          const items = Store.cartItems();
+          const t = Store.cartTotals(shipMethod);
+          $('summary').innerHTML = `
+            ${items.map((p) => `<div class="mini-item"><div class="cart-thumb">${UI.art(p)}<span class="qty-badge">${p.qty}</span></div><div class="mi-name">${UI.esc(p.name)}</div><div class="mi-price">${Store.formatRM(p.price * p.qty)}</div></div>`).join('')}
+            <div style="border-top:1px solid var(--border);margin:12px 0 4px"></div>
+            <div class="summary-row"><span>Subtotal</span><span>${Store.formatRM(t.subtotal)}</span></div>
+            ${t.discount ? `<div class="summary-row discount"><span>Discount (${t.coupon})</span><span>− ${Store.formatRM(t.discount)}</span></div>` : ''}
+            <div class="summary-row"><span>Shipping (${shipMethod})</span><span>${t.shipping ? Store.formatRM(t.shipping) : 'FREE'}</span></div>
+            <div class="summary-row"><span>SST (${S.sstRate * 100}%)</span><span>${Store.formatRM(t.tax)}</span></div>
+            <div class="summary-row total"><span>Total</span><span>${Store.formatRM(t.total)}</span></div>`;
+        }
+
+        renderShip(); renderPay(); renderSummary();
+
+        $('checkout-form').addEventListener('change', (e) => {
+          if (e.target.name === 'ship') { shipMethod = e.target.value; renderShip(); renderSummary(); }
+          if (e.target.name === 'pay') { payMethod = e.target.value; renderPay(); }
+        });
+
+        $('checkout-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const req = ['name', 'phone', 'email', 'line1', 'city', 'postcode'];
+          const missing = req.filter((id) => !$(id).value.trim());
+          req.forEach((id) => $(id).style.borderColor = missing.includes(id) ? 'var(--danger)' : '');
+          if (missing.length) { UI.toast('Please fill in all required fields', 'error'); $(missing[0]).focus(); return; }
+
+          const overlay = document.createElement('div');
+          overlay.className = 'processing';
+          overlay.innerHTML = `<div class="processing-box"><div class="spinner"></div><b>Processing payment…</b><p class="muted" style="font-size:14px">${payMethod === 'FPX Online Banking' ? 'Connecting to ' + $('bank').value : 'Please do not close this window'}</p></div>`;
+          document.body.appendChild(overlay);
+
+          setTimeout(() => {
+            const r = Store.placeOrder({
+              name: $('name').value.trim(), phone: $('phone').value.trim(), email: $('email').value.trim(),
+              line1: $('line1').value.trim(), city: $('city').value.trim(), postcode: $('postcode').value.trim(), state: $('state').value,
+              notes: $('notes').value.trim(), shippingMethod: shipMethod, payment: payMethod
+            });
+            overlay.remove();
+            if (!r.ok) { UI.toast(r.msg, 'error'); return; }
+            UI.updateCartBadge();
+            showSuccess(r.order);
+          }, 1400);
+        });
+
+        function showSuccess(o) {
+          window.scrollTo(0, 0);
+          page.innerHTML = `
+            <div class="success-box">
+              <div class="success-ic">${I.check}</div>
+              <h1>Thank you for your order!</h1>
+              <p class="muted">Your order <b style="color:var(--text)">${o.id}</b> has been placed successfully. A confirmation email has been sent to ${UI.esc(o.email)}.</p>
+              <div class="panel">
+                <div class="panel-title">Order ${o.id} ${UI.statusBadge(o.status)}</div>
+                ${o.items.map((i) => `<div class="mini-item"><div class="cart-thumb">${UI.art(i)}<span class="qty-badge">${i.qty}</span></div><div class="mi-name">${UI.esc(i.name)}</div><div class="mi-price">${Store.formatRM(i.price * i.qty)}</div></div>`).join('')}
+                <div style="border-top:1px solid var(--border);margin:12px 0 4px"></div>
+                <div class="summary-row"><span>Payment</span><span>${UI.esc(o.payment)}</span></div>
+                <div class="summary-row"><span>Deliver to</span><span style="text-align:right">${UI.esc(o.address.line1)}, ${UI.esc(o.address.city)}</span></div>
+                <div class="summary-row total"><span>Total paid</span><span>${Store.formatRM(o.total)}</span></div>
+              </div>
+              <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;flex-wrap:wrap">
+                <a href="orders.html?id=${o.id}" class="btn btn-primary">Track My Order</a>
+                <a href="shop.html" class="btn btn-outline">Continue Shopping</a>
+              </div>
+            </div>`;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
