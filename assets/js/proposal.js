@@ -19,7 +19,7 @@
   }
   ['monthly-orders','order-value','order-growth','basket-growth'].forEach(id => $(id).addEventListener('input',calculate));
   $('reset-scenario').addEventListener('click',()=>{
-    $('monthly-orders').value=100;$('order-value').value=500;$('order-growth').value=10;$('basket-growth').value=5;calculate();
+    $('monthly-orders').value=100;$('order-value').value=500;$('order-growth').value=0;$('basket-growth').value=0;calculate();
   });
   $('print-proposal').addEventListener('click',()=>window.print());
   calculate();

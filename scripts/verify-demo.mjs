@@ -28,6 +28,22 @@ try {
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/proposal.html');
   assert.match(await page.title(),/Lucky Dotcom/);
+  assert.equal(await page.locator('#business-symptom').inputValue(),'unknown');
+  assert.match(await page.locator('#diagnostic-result').innerText(),/No issue confirmed/);
+  for (const value of ['reach','conversion','pricing','repeat','profit','operations','control']) {
+    await page.locator('#business-symptom').selectOption(value);
+    assert.equal(await page.locator('#diagnostic-result dt').count(),5);
+    assert.match(await page.locator('#diagnostic-result').innerText(),/needs validation/);
+    assert.equal(await page.locator('#diagnostic-result a').count(),1);
+    assert(!(await page.locator('#diagnostic-result').innerText()).includes('undefined'));
+  }
+  await page.locator('#business-symptom').selectOption('unknown');
+  await page.locator('.discovery-meeting summary').click();
+  assert.equal(await page.locator('.meeting-content ol li').count(),6);
+  await page.locator('.discovery-meeting summary').click();
+  assert.match(await page.locator('#scenario-sales').innerText(),/50,000/);
+  await page.locator('#order-growth').fill('10');
+  await page.locator('#basket-growth').fill('5');
   assert.match(await page.locator('#scenario-sales').innerText(),/57,750/);
   await page.locator('#monthly-orders').fill('200');
   assert.match(await page.locator('#scenario-sales').innerText(),/115,500/);

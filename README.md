@@ -8,6 +8,8 @@ node scripts/serve.mjs
 
 Open http://127.0.0.1:4173/proposal.html for the client presentation. It links to the existing storefront and improved business dashboard.
 
+The proposal now starts with discovery (`proposal.html#diagnosis`). It separates the concern reported by the team, chosen demo rules and unverified business needs. A symptom explorer maps possible bottlenecks to evidence, immediate non-website actions, conditional website benefits, demo limitations and success measures. It includes a client interview guide, primary research links and pilot decision criteria. No symptom or sales uplift is assumed by default; the calculator starts at 0% change.
+
 Open http://127.0.0.1:4173/demos.html for the reusable demo gallery. Choose gadgets, automotive spare parts or kedai runcit/snacks. The Business demo selector is also available on the storefront and admin pages. Use `index.html?demo=automotive` or `index.html?demo=grocery` to open a specific catalogue directly.
 
 Each profile has separate browser-stored products, cart, orders, dealer applications and edits. Login persists across business changes within a tab. Tabs can sign in separately, so a customer can wait for an admin's approval in another tab. Resetting affects only the selected profile. This is a demonstration, not production multi-tenant access control.
