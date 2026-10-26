@@ -42,6 +42,15 @@ p { margin: 0; }
 .muted { color: var(--muted); }
 .hidden { display: none !important; }
 
+/* Business selector stays outside the customer-facing shop navigation. */
+.demo-switcher {background:#edf2f8;border-bottom:1px solid #d8e1ed;color:#334155;font-size:11px;line-height:1.45;}
+.demo-switcher-inner,.admin-demo-switcher {display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px;}
+.demo-profile-label {display:flex;align-items:center;gap:10px;font-size:12px;font-weight:650;white-space:nowrap;}
+.demo-profile-label select {border:1px solid #bdcbdc;border-radius:7px;background:#fff;padding:7px 28px 7px 10px;font-size:12px;max-width:220px;}
+.demo-switcher a {color:var(--primary);font-weight:600;margin-left:auto;}
+.admin-demo-switcher {padding-left:28px;padding-right:28px;}
+@media(max-width:640px){.demo-switcher-inner,.admin-demo-switcher{gap:7px 12px}.demo-profile-label{width:100%;justify-content:space-between}.demo-profile-label select{flex:1;max-width:none;min-width:0}.demo-switcher #demo-profile-note{font-size:10px;max-width:210px}.demo-switcher a{font-size:10px}.admin-demo-switcher{padding-left:16px;padding-right:16px}.header-inner{gap:14px}}
+
 /* ---------- Buttons ---------- */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 22px; border-radius: 12px; border: 1px solid transparent; font-weight: 600; font-size: 15px; transition: .18s ease; white-space: nowrap; }
 .btn svg { width: 18px; height: 18px; }

@@ -42,6 +42,16 @@
   let artId = 0;
   const DARK = '#111827';
   const SHAPES = {
+    brake: (s) => `<circle cx="100" cy="100" r="62" fill="#cbd5e1"/><circle cx="100" cy="100" r="48" fill="#64748b"/><circle cx="100" cy="100" r="24" fill="${DARK}"/><circle cx="100" cy="100" r="10" fill="#cbd5e1"/><path d="M144 59q28 30 6 70l-23-10q13-27-3-43z" fill="url(#${s})"/><circle cx="78" cy="67" r="5" fill="#e2e8f0"/><circle cx="65" cy="109" r="5" fill="#e2e8f0"/><circle cx="103" cy="138" r="5" fill="#e2e8f0"/>`,
+    filter: (s) => `<rect x="38" y="53" width="124" height="94" rx="8" fill="${DARK}"/><rect x="45" y="60" width="110" height="80" rx="4" fill="#fef3c7"/>${Array.from({length:10},(_,i)=>`<path d="M${51+i*10} 64v72" stroke="#b89a62" stroke-width="4"/>`).join('')}`,
+    oil: (s) => `<path d="M65 56h71l15 24v83H52V80z" fill="${DARK}"/><rect x="70" y="37" width="33" height="24" rx="4" fill="${DARK}"/><rect x="110" y="67" width="22" height="17" rx="5" fill="url(#${s})"/><rect x="63" y="97" width="77" height="49" rx="5" fill="url(#${s})"/><path d="M102 106s-13 16-13 23a13 13 0 0 0 26 0c0-7-13-23-13-23z" fill="#fff" opacity=".85"/>`,
+    battery: (s) => `<rect x="40" y="67" width="120" height="89" rx="9" fill="${DARK}"/><rect x="53" y="52" width="26" height="18" rx="3" fill="#ef4444"/><rect x="122" y="52" width="26" height="18" rx="3" fill="#94a3b8"/><rect x="53" y="83" width="94" height="52" rx="4" fill="url(#${s})"/><path d="M107 87 85 112h17l-7 20 24-29h-18z" fill="#fff"/>`,
+    bulb: (s) => `<path d="M75 119c0-14-17-19-17-44a42 42 0 0 1 84 0c0 25-17 30-17 44z" fill="#fef3c7"/><rect x="76" y="119" width="48" height="37" rx="7" fill="#475569"/><path d="M78 130h44M78 141h44" stroke="#cbd5e1" stroke-width="4"/><path d="m85 72 15 32 15-32" fill="none" stroke="url(#${s})" stroke-width="5"/>`,
+    tool: (s) => `<path d="M61 37a30 30 0 0 0 28 44l47 73a13 13 0 0 0 22-14L108 69a30 30 0 0 0-31-44l13 24-17 10z" fill="#cbd5e1"/><path d="m92 103-39 50" stroke="${DARK}" stroke-width="19" stroke-linecap="round"/><path d="m111 81 37-46 10 8-36 46" fill="url(#${s})"/>`,
+    snack: (s) => `<path d="m56 35 88 0-5 19 9 109-96 0 9-109z" fill="url(#${s})"/><path d="M57 41h86M54 156h92" stroke="${DARK}" opacity=".35" stroke-width="5"/><ellipse cx="100" cy="101" rx="32" ry="38" fill="#fff" opacity=".85"/><ellipse cx="95" cy="92" rx="17" ry="12" fill="#e8b75b" transform="rotate(-25 95 92)"/><ellipse cx="109" cy="114" rx="17" ry="12" fill="#f0cf7b" transform="rotate(20 109 114)"/>`,
+    box: (s) => `<rect x="44" y="47" width="112" height="112" rx="6" fill="url(#${s})"/><path d="m44 47 18-16h111l-17 16" fill="#fff" opacity=".5"/><rect x="57" y="68" width="86" height="21" rx="4" fill="#fff" opacity=".9"/><circle cx="88" cy="120" r="21" fill="#dbb278"/><circle cx="116" cy="127" r="21" fill="#f4d5a4"/><path d="M81 113h4m24 9h4m9 9h4m-33-4h4" stroke="#845c39" stroke-width="4" stroke-linecap="round"/>`,
+    bottle: (s) => `<rect x="85" y="28" width="30" height="22" rx="4" fill="${DARK}"/><path d="M85 49h30v14l16 21v78H69V84l16-21z" fill="#e2e8f0"/><rect x="72" y="91" width="56" height="49" rx="4" fill="url(#${s})"/><rect x="79" y="104" width="42" height="7" rx="3" fill="#fff" opacity=".9"/><rect x="85" y="119" width="30" height="5" rx="2" fill="#fff" opacity=".6"/>`,
+    bag: (s) => `<path d="M63 36h74l14 128H49z" fill="url(#${s})"/><path d="M66 46h68" stroke="${DARK}" opacity=".3" stroke-width="4"/><rect x="63" y="73" width="74" height="63" rx="6" fill="#fff" opacity=".85"/><path d="m83 120 17-30 17 30" fill="none" stroke="#7c9a55" stroke-width="5"/><path d="M100 91v38" stroke="#7c9a55" stroke-width="3"/>`,
     phone: (s) => `<rect x="68" y="28" width="64" height="142" rx="13" fill="${DARK}"/><rect x="72" y="32" width="56" height="134" rx="10" fill="url(#${s})"/><rect x="90" y="37" width="20" height="5" rx="2.5" fill="${DARK}"/><circle cx="100" cy="100" r="22" fill="#fff" opacity=".18"/><rect x="84" y="150" width="32" height="3" rx="1.5" fill="#fff" opacity=".6"/>`,
     laptop: (s) => `<rect x="40" y="48" width="120" height="80" rx="7" fill="${DARK}"/><rect x="45" y="53" width="110" height="70" rx="3" fill="url(#${s})"/><circle cx="100" cy="88" r="16" fill="#fff" opacity=".2"/><path d="M26 132h148l-9 13H35z" fill="#e5e7eb"/><rect x="86" y="132" width="28" height="3" rx="1.5" fill="#9ca3af"/>`,
     tablet: (s) => `<rect x="46" y="36" width="108" height="136" rx="12" fill="${DARK}"/><rect x="52" y="42" width="96" height="124" rx="7" fill="url(#${s})"/><rect x="62" y="56" width="34" height="34" rx="8" fill="#fff" opacity=".25"/><rect x="104" y="56" width="34" height="34" rx="8" fill="#fff" opacity=".15"/><rect x="62" y="98" width="76" height="10" rx="5" fill="#fff" opacity=".2"/>`,
@@ -164,6 +174,7 @@
     const el = document.getElementById('site-header');
     if (!el) return;
     const u = Store.user();
+    document.title = document.title.replace(/VoltHub/g, DATA.store.name);
     const link = (href, label, key) => `<a href="${BASE}${href}" class="${active === key ? 'active' : ''}">${label}</a>`;
     const account = u
       ? `<div class="dropdown">
@@ -179,22 +190,21 @@
       : `<a href="${BASE}login.html" class="account-btn">${ICONS.user}<span class="hide-sm">Login</span></a>`;
 
     el.innerHTML = `
-      <div class="announce">${ICONS.truck}<span>Free shipping on orders above RM 500 &nbsp;·&nbsp; Use code <b>DEMO10</b> for 10% off</span></div>
+      <div class="demo-switcher"><div class="container demo-switcher-inner">${Demo.selector()}<a href="${BASE}demos.html">About these demos ↗</a></div></div>
+      <div class="announce">${ICONS.truck}<span>Sample store · ${esc(Demo.theme.label)} · Free sample shipping from ${Store.formatRM(DATA.settings.freeShippingMin)} · <b>DEMO10</b> for 10% off</span></div>
       <header class="header">
         <div class="container header-inner">
           <button class="icon-btn menu-toggle" aria-label="Open menu">${ICONS.menu}</button>
-          <a href="${BASE}index.html" class="logo"><span class="logo-mark">${ICONS.bolt}</span><span>Volt<b>Hub</b></span></a>
+          <a href="${BASE}index.html" class="logo"><span class="logo-mark">${ICONS.bolt}</span><span>${esc(Demo.theme.first)}<b>${esc(Demo.theme.last)}</b></span></a>
           <nav class="nav" id="main-nav">
             ${link('index.html', 'Home', 'home')}
             ${link('proposal.html', 'Proposal', 'proposal')}
             ${link('shop.html', 'Shop All', 'shop')}
-            ${link('shop.html?cat=smartphones', 'Phones', 'smartphones')}
-            ${link('shop.html?cat=laptops', 'Laptops', 'laptops')}
-            ${link('shop.html?cat=audio', 'Audio', 'audio')}
+            ${DATA.categories.slice(0,3).map(c=>link('shop.html?cat='+c.id,esc(c.name),c.id)).join('')}
             ${link('shop.html?deals=1', 'Deals', 'deals')}
           </nav>
           <form class="search" action="${BASE}shop.html" role="search">
-            <input type="search" name="q" placeholder="Search phones, laptops, audio…" aria-label="Search products">
+            <input type="search" name="q" placeholder="${esc(Demo.theme.search)}" aria-label="Search products">
             <button type="submit" aria-label="Search">${ICONS.search}</button>
           </form>
           <div class="header-actions">
@@ -203,6 +213,7 @@
           </div>
         </div>
       </header>`;
+    Demo.bind();
 
     const q = new URLSearchParams(location.search).get('q');
     if (q) el.querySelector('.search input').value = q;
@@ -218,8 +229,8 @@
       <footer class="footer">
         <div class="container footer-grid">
           <div>
-            <a href="${BASE}index.html" class="logo logo-light"><span class="logo-mark">${ICONS.bolt}</span><span>Volt<b>Hub</b></span></a>
-            <p class="muted-light">Malaysia's favourite place for genuine gadgets with official warranty, fast delivery and friendly support.</p>
+            <a href="${BASE}index.html" class="logo logo-light"><span class="logo-mark">${ICONS.bolt}</span><span>${esc(Demo.theme.first)}<b>${esc(Demo.theme.last)}</b></span></a>
+            <p class="muted-light">${esc(Demo.theme.description)} All products, prices, reviews and policies are illustrative.</p>
             <div class="pay-badges"><span>FPX</span><span>VISA</span><span>Mastercard</span><span>COD</span></div>
           </div>
           <div><h4>Shop</h4>${DATA.categories.slice(0, 6).map((c) => `<a href="${BASE}shop.html?cat=${c.id}">${c.name}</a>`).join('')}</div>

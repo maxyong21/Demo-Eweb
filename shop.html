@@ -57,27 +57,22 @@
   <div id="site-footer"></div>
 
   <script src="assets/js/data.js"></script>
+  <script src="assets/js/profiles.js"></script>
   <script src="assets/js/store.js"></script>
   <script src="assets/js/ui.js"></script>
   <script>
     const params = new URLSearchParams(location.search);
-    const PRICES = [
-      { id: 'all', label: 'Any price', min: 0, max: Infinity },
-      { id: 'u500', label: 'Under RM 500', min: 0, max: 500 },
-      { id: '500-1500', label: 'RM 500 – RM 1,500', min: 500, max: 1500 },
-      { id: '1500-4000', label: 'RM 1,500 – RM 4,000', min: 1500, max: 4000 },
-      { id: 'o4000', label: 'Above RM 4,000', min: 4000, max: Infinity }
-    ];
+    const PRICES = Demo.priceRanges();
     const state = {
       q: params.get('q') || '',
-      cat: params.get('cat') || 'all',
+      cat: DATA.categories.some(c=>c.id===params.get('cat')) ? params.get('cat') : 'all',
       price: params.get('price') || 'all',
       sort: params.get('sort') || 'featured',
       instock: params.get('instock') === '1',
       deals: params.get('deals') === '1'
     };
 
-    UI.renderHeader(state.deals ? 'deals' : (['smartphones', 'laptops', 'audio'].includes(state.cat) ? state.cat : 'shop'));
+    UI.renderHeader(state.deals ? 'deals' : (state.cat !== 'all' ? state.cat : 'shop'));
     UI.renderFooter();
 
     const products = Store.products();
@@ -85,6 +80,7 @@
 
     function syncUrl() {
       const p = new URLSearchParams();
+      p.set('demo', Demo.active);
       if (state.q) p.set('q', state.q);
       if (state.cat !== 'all') p.set('cat', state.cat);
       if (state.price !== 'all') p.set('price', state.price);

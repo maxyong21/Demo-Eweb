@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore one reusable store and dashboard with gadget, automotive spare parts and grocery catalogues.">
+  <title>Choose a business demo</title>
+  <link rel="stylesheet" href="assets/css/proposal.css">
+  <link rel="stylesheet" href="assets/css/demos.css">
+</head>
+<body>
+  <header class="proposal-header"><div class="wrap header-row"><a class="brand" href="demos.html"><span class="brand-dot" aria-hidden="true"></span>Business demos</a><a class="text-link" href="proposal.html">Lucky Dotcom proposal ↗</a></div></header>
+  <main>
+    <section class="wrap gallery-intro"><p class="eyebrow">One platform. Different businesses.</p><h1>Show your client<br><span>a store they recognise.</span></h1><p>Choose a sample business. The products, categories and store content change. The shopping experience and admin tools stay familiar.</p><div class="gallery-note">All businesses and products are examples. No real payments or live inventory connections.</div></section>
+    <section class="wrap" aria-label="Choose an industry"><div class="demo-gallery" id="demo-gallery"></div></section>
+    <section class="wrap gallery-section"><div class="section-heading"><p class="eyebrow">Why this approach works</p><h2>Build the common parts once.<br>Adapt the parts that matter.</h2><p>There is no need to rebuild the same cart, product management and dashboard for every sales presentation.</p></div><div class="gallery-benefits"><article><span>01</span><h3>Faster to prepare</h3><p>Select a relevant catalogue, then use the existing admin tools to change products, descriptions, prices and stock for the conversation.</p></article><article><span>02</span><h3>Easier to maintain</h3><p>An improvement to search, checkout or analytics benefits every demo. One shared application keeps the experience consistent.</p></article><article><span>03</span><h3>More relevant to the buyer</h3><p>A workshop sees spare parts. A kedai runcit sees snacks and pantry items. Clients can follow a realistic buying journey.</p></article></div></section>
+    <section class="gallery-boundaries"><div class="wrap"><p class="eyebrow">Set the right expectations</p><h2>Same foundation.<br>Different specialist requirements.</h2><p>Changing products demonstrates the shared commerce workflow. Specialist operations still need their own scope and implementation.</p><div class="industry-boundaries"><article><h3>Gadgets</h3><p>Dealer approval, quantity pricing, quotations and serial-number warranty handling.</p></article><article><h3>Automotive</h3><p>Vehicle compatibility, VIN lookup, OEM cross-references and fitment validation.</p></article><article><h3>Grocery</h3><p>Batch and expiry tracking, weighted goods, perishables and delivery time slots.</p></article></div><p class="boundary-foot">These specialist features are not implemented in the current demos. Confirm each client's workflow before quoting production work.</p></div></section>
+    <section class="wrap gallery-section"><div class="section-heading"><p class="eyebrow">A simple client walkthrough</p><h2>Let the workflow do the explaining.</h2></div><ol class="gallery-walkthrough"><li><b>Choose the business</b><span>Select a catalogue above, or use the Business demo selector in the store or admin panel.</span></li><li><b>Try the buying journey</b><span>Search a product, add it to the cart and place a sample order. Customer login: <code>user</code> / <code>user123</code>.</span></li><li><b>Show the owner's view</b><span>Use <code>admin</code> / <code>admin123</code> to manage products and orders, explore analytics and download a report.</span></li><li><b>Agree the real scope</b><span>Identify required price rules, images, integrations and industry-specific workflows. Use those requirements to prepare the client's proposal.</span></li></ol><div class="gallery-note">Products, carts, orders and edits stay separate for each business type in this browser. Switching back restores that demo's data; resetting affects only the selected catalogue. Each open tab keeps its own selected business. This is demo separation, not production multi-company security.</div></section>
+  </main>
+  <footer class="proposal-footer wrap"><div><b>A reusable demo for client presentations</b><p>Shared layouts and features · configurable sample catalogues</p></div><a class="text-link" href="proposal.html">Read the Lucky Dotcom proposal ↗</a></footer>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/profiles.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script>
+    document.getElementById('demo-gallery').innerHTML = Object.entries(Demo.profiles).map(([id,t]) => `
+      <article class="gallery-card">
+        <div class="gallery-products">${t.products.slice(0,3).map(UI.art).join('')}</div>
+        <div class="gallery-card-content"><span class="gallery-label">${UI.esc(t.label)}</span><h2>${UI.esc(t.name)}</h2><p>${UI.esc(t.description)}</p>
+          <div class="gallery-categories">${t.categories.slice(0,4).map(c=>`<span>${UI.esc(c.name)}</span>`).join('')}</div>
+          <a class="button" href="index.html?demo=${id}">Explore the store ↗</a>
+          <a class="text-link" href="login.html?redirect=admin%2Findex.html&amp;demo=${id}">Explore the admin dashboard ↗</a>
+        </div>
+      </article>`).join('');
+  </script>
+</body>
+</html>

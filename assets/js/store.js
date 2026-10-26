@@ -4,7 +4,7 @@
    the browser so client + admin share the same data.
    ========================================================= */
 (function () {
-  const NS = 'volthub_';
+  const NS = DATA.demoProfile === 'gadgets' || !DATA.demoProfile ? 'volthub_' : 'demo_' + DATA.demoProfile + '_';
   const VERSION = '1';
   const K = {
     version: NS + 'version',
@@ -12,7 +12,7 @@
     orders: NS + 'orders',
     cart: NS + 'cart',
     coupon: NS + 'coupon',
-    session: NS + 'session'
+    session: 'volthub_session'
   };
   const STATUSES = ['Pending', 'Processing', 'Shipped', 'Delivered'];
   const HOUR = 3600000, DAY = 86400000;

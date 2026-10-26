@@ -17,7 +17,7 @@
     document.getElementById('admin-app').innerHTML = `
       <div class="admin-shell">
         <aside class="sidebar">
-          <a href="index.html" class="logo logo-light"><span class="logo-mark">${I.bolt}</span><span>Volt<b>Hub</b></span></a>
+          <a href="index.html" class="logo logo-light"><span class="logo-mark">${I.bolt}</span><span>${UI.esc(Demo.theme.first)}<b>${UI.esc(Demo.theme.last)}</b></span></a>
           <nav class="side-nav">
             <div class="side-label">Overview</div>
             ${link('index.html', 'grid', 'Dashboard', 'dashboard')}
@@ -27,6 +27,7 @@
             ${link('customers.html', 'users', 'Customers', 'customers')}
             <div class="side-label">Demo</div>
             <a href="../proposal.html">${I.chart}Lucky Dotcom Proposal</a>
+            <a href="../demos.html">${I.store}Choose a Business Demo</a>
             <a href="../index.html" target="_blank" rel="noopener">${I.store}View Storefront</a>
             <button id="reset-demo">${I.refresh}Reset Demo Data</button>
             <button data-logout>${I.logout}Logout</button>
@@ -39,16 +40,19 @@
             <div><h1>${UI.esc(title)}</h1>${sub ? `<div class="sub">${UI.esc(sub)}</div>` : ''}</div>
             <div class="top-actions" id="top-actions"></div>
           </header>
+          <div class="demo-switcher admin-demo-switcher">${Demo.selector()}<a href="../demos.html">About these demos ↗</a></div>
           <main class="admin-content" id="admin-content"></main>
         </div>
       </div>`;
+    document.title = document.title.replace(/VoltHub/g, DATA.store.name);
+    Demo.bind();
 
     document.querySelector('.admin-menu').addEventListener('click', () => document.body.classList.toggle('side-open'));
     document.body.addEventListener('click', (e) => {
       if (document.body.classList.contains('side-open') && !e.target.closest('.sidebar') && !e.target.closest('.admin-menu')) document.body.classList.remove('side-open');
     });
     document.getElementById('reset-demo').addEventListener('click', () => {
-      if (!confirm('Reset all demo data? This restores the original products and orders and clears the cart.')) return;
+      if (!confirm('Reset the ' + Demo.theme.label + ' demo? This restores its sample products and orders and clears its cart. Other business demos are kept.')) return;
       Store.resetDemo();
       location.reload();
     });
@@ -61,7 +65,7 @@
     return document.getElementById('admin-content');
   }
 
-  const demoBanner = () => `<div class="demo-banner">${I.alert}<span>Demo mode — all data is stored in this browser. Orders placed on the storefront appear here instantly. Use <b>Reset Demo Data</b> to start fresh.</span></div>`;
+  const demoBanner = () => `<div class="demo-banner">${I.alert}<span><b>${UI.esc(Demo.theme.label)} demo</b> — data is stored in this browser, separately from other business types. Reset restores this catalogue only.<br>${UI.esc(Demo.theme.caution)}</span></div>`;
 
   // Order detail modal with status update. onChange(order) is called after a status change.
   function orderModal(id, onChange) {

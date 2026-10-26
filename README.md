@@ -8,6 +8,12 @@ node scripts/serve.mjs
 
 Open http://127.0.0.1:4173/proposal.html for the client presentation. It links to the existing storefront and improved business dashboard.
 
+Open http://127.0.0.1:4173/demos.html for the reusable demo gallery. Choose gadgets, automotive spare parts or kedai runcit/snacks. The Business demo selector is also available on the storefront and admin pages. Use `index.html?demo=automotive` or `index.html?demo=grocery` to open a specific catalogue directly.
+
+Each profile has separate browser-stored products, cart, orders and edits. Login is shared for convenient presenting. Each tab retains its own profile; resetting demo data affects only that profile. This is a demonstration, not production multi-tenant access control.
+
+Use **Admin → Products** to add or edit products, prices, stock, descriptions, illustrations and specifications. To create another industry, add a catalogue configuration to `assets/js/profiles.js`; the page layouts and commerce functions are shared. The image upload workflow remains proposed work.
+
 - **Admin demo:** `admin` / `admin123`
 - **Customer demo:** `user` / `user123`
 

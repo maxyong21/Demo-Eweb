@@ -13,6 +13,7 @@
   <div id="admin-app"></div>
 
   <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/profiles.js"></script>
   <script src="../assets/js/store.js"></script>
   <script src="../assets/js/ui.js"></script>
   <script src="../assets/js/admin.js"></script>
@@ -21,7 +22,7 @@
     if (root) {
       const I = UI.ICONS;
       const state = { q: '', cat: 'all' };
-      const ART_TYPES = ['phone', 'laptop', 'tablet', 'headphones', 'earbuds', 'watch', 'speaker', 'camera', 'controller', 'powerbank', 'keyboard'];
+      const ART_TYPES = ['phone', 'laptop', 'tablet', 'headphones', 'earbuds', 'watch', 'speaker', 'camera', 'controller', 'powerbank', 'keyboard', 'brake', 'filter', 'oil', 'battery', 'bulb', 'tool', 'snack', 'box', 'bottle', 'bag'];
 
       document.getElementById('top-actions').innerHTML = `<button class="btn btn-primary btn-sm" id="add-product">${I.plus}<span class="hide-sm">Add Product</span></button>`;
       root.innerHTML = `
@@ -62,7 +63,7 @@
 
       function productForm(p) {
         const isNew = !p;
-        p = p || { id: '', name: '', category: 'smartphones', art: 'phone', colors: ['#2563eb', '#7c3aed'], price: '', oldPrice: '', stock: 10, rating: 4.5, reviews: 0, featured: false, short: '', desc: '', specs: { Warranty: '1 Year Official' } };
+        p = p || { id: '', name: '', category: DATA.categories[0].id, art: DATA.categories[0].art, colors: DATA.categories[0].colors, price: '', oldPrice: '', stock: 10, rating: 4.5, reviews: 0, featured: false, short: '', desc: '', specs: { Note: 'Sample product information' } };
         const m = UI.openModal(`
           <h2>${isNew ? 'Add new product' : 'Edit product'}</h2>
           <p class="muted" style="font-size:14px">${isNew ? 'The product will appear in the storefront immediately.' : p.id}</p>
@@ -78,10 +79,11 @@
               <div class="field full"><label for="f-name">Product name *</label><input class="input" id="f-name" required value="${UI.esc(p.name)}"></div>
               <div class="field"><label for="f-cat">Category</label><select class="select" id="f-cat">${DATA.categories.map((c) => `<option value="${c.id}" ${c.id === p.category ? 'selected' : ''}>${c.name}</option>`).join('')}</select></div>
               <div class="field"><label for="f-stock">Stock *</label><input class="input" id="f-stock" type="number" min="0" required value="${p.stock}"></div>
-              <div class="field"><label for="f-price">Price (RM) *</label><input class="input" id="f-price" type="number" min="1" step="0.01" required value="${p.price}"></div>
+              <div class="field"><label for="f-price">Price (RM) *</label><input class="input" id="f-price" type="number" min="0.01" step="0.01" required value="${p.price}"></div>
               <div class="field"><label for="f-old">Original price (RM)</label><input class="input" id="f-old" type="number" min="0" step="0.01" value="${p.oldPrice || ''}" placeholder="Leave blank if not on sale"></div>
               <div class="field full"><label for="f-short">Short description</label><input class="input" id="f-short" value="${UI.esc(p.short)}"></div>
               <div class="field full"><label for="f-desc">Full description</label><textarea class="textarea" id="f-desc">${UI.esc(p.desc)}</textarea></div>
+              <div class="field full"><label for="f-specs">Specifications (one per line: Name: Value)</label><textarea class="textarea" id="f-specs" placeholder="Pack size: 12 pieces">${UI.esc(Object.entries(p.specs || {}).map(([key,value])=>key+': '+value).join('\n'))}</textarea></div>
               <label class="checkbox full"><input type="checkbox" id="f-featured" ${p.featured ? 'checked' : ''}> Feature on homepage</label>
             </div>
             <div class="modal-actions">
@@ -103,16 +105,24 @@
           const old = parseFloat($('f-old').value);
           if (!name || !(price > 0) || !(stock >= 0)) { UI.toast('Please enter a name, price and stock', 'error'); return; }
           if (old && old <= price) { UI.toast('Original price must be higher than the selling price', 'error'); return; }
+          const specs = {};
+          for (const line of $('f-specs').value.split('\n').filter(s=>s.trim())) {
+            const colon = line.indexOf(':');
+            if (colon < 1 || !line.slice(colon+1).trim()) { UI.toast('Use Name: Value for each specification', 'error'); return; }
+            const key = line.slice(0,colon).trim();
+            if (['__proto__','constructor','prototype'].includes(key)) { UI.toast('Please use another specification name', 'error'); return; }
+            specs[key] = line.slice(colon+1).trim();
+          }
           const list = Store.products();
           const data = {
-            name, price, stock, oldPrice: old || null,
+            name, price, stock, oldPrice: old || null, specs,
             category: $('f-cat').value, art: $('f-art').value, colors: [$('f-c1').value, $('f-c2').value],
             short: $('f-short').value.trim(), desc: $('f-desc').value.trim() || $('f-short').value.trim(), featured: $('f-featured').checked
           };
           let id = p.id;
           if (isNew) {
             const max = list.reduce((m, x) => Math.max(m, parseInt(x.id.replace(/\D/g, ''), 10) || 0), 1000);
-            id = 'P' + (max + 1);
+            id = (DATA.demoProfile === 'automotive' ? 'A' : DATA.demoProfile === 'grocery' ? 'G' : 'P') + (max + 1);
             list.unshift(Object.assign({}, p, data, { id }));
           } else {
             Object.assign(list.find((x) => x.id === p.id), data);
