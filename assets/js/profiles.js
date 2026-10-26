@@ -7,7 +7,7 @@
       headline: ['Find your next gadget.', 'Keep life connected.'],
       description: 'Explore phones, audio, wearables and everyday accessories in this sample gadget store.',
       search: 'Search phones, audio, accessories…',
-      caution: 'Client-specific features such as dealer approval, quantity pricing and quotations are separate scope.',
+      caution: 'Dealer applications, approval and quantity pricing work in this browser demo. Live integrations and quotations remain separate scope.',
       categories: original.categories, products: original.products,
       threshold:500, shipping:15, priceBreaks:[500,1500,4000],
       note:'Compatibility, warranty and delivery details are sample information.'
@@ -85,6 +85,17 @@
       rating:4.5,reviews:0,featured:[0,3,4,6,8,11,14,15].includes(i)
     }));
     delete t.items;
+  }
+  for (const [id,t] of Object.entries(themes)) {
+    const category=t.categories.find(c=>c.id===(id==='gadgets'?'accessories':id==='automotive'?'workshop':'snacks')) || t.categories[0];
+    t.products.push({id:(id==='gadgets'?'P':id==='automotive'?'A':'G')+'1099',dealerExample:true,
+      name:id==='gadgets'?'USB Cable · Dealer Pricing Example':id==='automotive'?'Cable Tie · Dealer Pricing Example':'Snack Pack · Dealer Pricing Example',
+      category:category.id,art:category.art,colors:category.colors,price:1,oldPrice:null,stock:2000,rating:4.5,reviews:0,featured:false,
+      short:'Sample item for trying retail checkout, dealer approval and quantity price breaks.',
+      desc:'A sample product for testing dealer approval and quantity pricing. The current quantity table shows the rules set by admin. The highest eligible price break defines a unit rate for every unit in that product line.',
+      specs:{Unit:'One piece',Note:'Demonstration only'},
+      wholesale:{enabled:true,minimum:50,multiple:1,tiers:[{quantity:50,total:45},{quantity:100,total:85}]}
+    });
   }
   function saved(storage,key) { try {return storage.getItem(key);} catch {return null;} }
   function remember(storage,key,value) { try {storage.setItem(key,value);} catch { /* URL still works */ } }

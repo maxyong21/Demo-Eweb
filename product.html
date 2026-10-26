@@ -34,6 +34,8 @@
       const off = UI.discountPct(p);
       const [c1, c2] = p.colors;
       const views = [[c1, c2], [c2, c1], ['#0f172a', c1], ['#e2e8f0', c2]];
+      const rule=Store.dealerRule(p), minimum=rule?.minimum || 1, multiple=rule?.multiple || 1;
+      const available=p.stock>=minimum;
       const stock = p.stock <= 0 ? '<span class="stock out">Out of stock</span>'
         : p.stock < 10 ? `<span class="stock low">Hurry, only ${p.stock} left in stock</span>`
         : `<span class="stock in">In stock in this sample catalogue</span>`;
@@ -54,22 +56,25 @@
             <div class="pc-cat">${cat.name}</div>
             <h1>${UI.esc(p.name)}</h1>
             <div class="pd-rating">${UI.stars(p.rating)}<b style="color:var(--text)">${p.rating}</b><span>· ${p.reviews.toLocaleString()} reviews</span><span>· SKU ${p.id}</span></div>
-            <div class="pd-price">
+            <div class="pd-price" id="live-unit-price">
               <span class="price">${Store.formatRM(p.price)}</span>
               ${p.oldPrice ? `<span class="price-old">${Store.formatRM(p.oldPrice)}</span><span class="save-pill">Save ${Store.formatRM(p.oldPrice - p.price)} (${off}%)</span>` : ''}
             </div>
             <div class="hint">Sample price. Tax and delivery are calculated using demo settings at checkout. No real payment is processed.</div>
             <p class="pd-short">${UI.esc(p.short)}</p>
             ${stock}
+            ${p.wholesale?.enabled?`<div class="dealer-panel"><h3>${Store.isDealer()?'Your dealer quantity prices':'Wholesale / dealer pricing'}</h3><p>${Store.isDealer()?'Approved access is active.':'These prices require an approved dealer account. Retail prices remain active until approval.'}</p><p>Dealer minimum: <b>${p.wholesale.minimum} units</b> · Pack increment: <b>${p.wholesale.multiple}</b></p><table class="dealer-price-table"><thead><tr><th>Quantity from</th><th>Pack total</th><th>Effective unit rate</th></tr></thead><tbody>${p.wholesale.tiers.slice().sort((a,b)=>a.quantity-b.quantity).map(t=>`<tr><td>${t.quantity} units</td><td>${Store.formatRM(t.total)} / ${t.quantity}</td><td>RM ${(t.total/t.quantity).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:6})}</td></tr>`).join('')}</tbody></table><p class="hint">The highest eligible price break sets the rate for every unit in this product line. No retail coupon stacking.</p>${!Store.isDealer()?'<a class="link" href="dealer.html">'+(Store.dealerApplication()?.status==='Pending'?'Check pending application':'Apply for dealer access')+' →</a>':''}</div>`:''}
             <div class="pd-buy">
               <div class="qty">
                 <button data-step="-1" aria-label="Decrease">${I.minus}</button>
-                <input type="number" id="qty" value="1" min="1" max="${Math.max(1, p.stock)}" aria-label="Quantity">
+                <input type="number" id="qty" value="${minimum}" min="${minimum}" step="${multiple}" max="${Math.max(minimum, p.stock)}" aria-label="Quantity">
                 <button data-step="1" aria-label="Increase">${I.plus}</button>
               </div>
-              <button class="btn btn-dark" id="add-btn" ${p.stock <= 0 ? 'disabled' : ''}>${I.cart} Add to Cart</button>
-              <button class="btn btn-primary" id="buy-btn" ${p.stock <= 0 ? 'disabled' : ''}>Buy Now</button>
+              <button class="btn btn-dark" id="add-btn" ${!available ? 'disabled' : ''}>${I.cart} Add to Cart</button>
+              <button class="btn btn-primary" id="buy-btn" ${!available ? 'disabled' : ''}>Buy Now</button>
             </div>
+            <p class="dealer-line-note" id="live-line-price" aria-live="polite"></p>
+            ${!available && rule?'<p class="stock-out">Available stock is below the dealer minimum. This item cannot currently be ordered with dealer access.</p>':''}
             <div class="pd-perks">
               <div>${I.truck}<span><b>Sample free delivery</b><br>Orders from ${Store.formatRM(DATA.settings.freeShippingMin)}</span></div>
               <div>${I.shield}<span><b>Check product details</b><br>Illustrative specifications</span></div>
@@ -101,11 +106,18 @@
         </section>`;
 
       const qty = document.getElementById('qty');
-      const clamp = () => { qty.value = Math.min(Math.max(1, parseInt(qty.value, 10) || 1), Math.max(1, p.stock)); };
+      function refreshPrice() {
+        const n=Number(qty.value),quote=Store.quoteProduct(p,n);
+        document.getElementById('live-unit-price').innerHTML=`<span class="price">${Store.formatUnitPrice(quote.price)}</span><span class="hint">${quote.wholesaleApplied?'Dealer effective unit price':'Retail price per unit'}</span>${quote.wholesaleApplied?`<span class="price-old">Retail ${Store.formatRM(p.price)}</span>`:''}`;
+        const error=Store.quantityError(p,n);
+        document.getElementById('live-line-price').textContent=error || n+' units · Item total '+Store.formatRM(quote.lineTotal)+(quote.wholesaleApplied?' · Dealer price':' · Retail price');
+      }
+      const clamp = () => { const requested=Math.max(minimum,Math.ceil((parseInt(qty.value,10)||minimum)/multiple)*multiple);qty.value=Math.max(minimum,Math.min(requested,Math.floor(p.stock/multiple)*multiple));refreshPrice(); };
       qty.addEventListener('change', clamp);
+      qty.addEventListener('input',refreshPrice);refreshPrice();
       page.addEventListener('click', (e) => {
         const step = e.target.closest('[data-step]');
-        if (step) { qty.value = (parseInt(qty.value, 10) || 1) + Number(step.dataset.step); clamp(); }
+        if (step) { qty.value = (parseInt(qty.value, 10) || minimum) + Number(step.dataset.step)*multiple; clamp(); }
         const view = e.target.closest('[data-view]');
         if (view) {
           document.querySelectorAll('[data-view]').forEach((b) => b.classList.toggle('active', b === view));
@@ -117,10 +129,11 @@
           document.querySelectorAll('.tab-panel').forEach((t) => t.classList.toggle('active', t.id === 'tab-' + tab.dataset.tab));
         }
       });
-      const add = () => { const r = Store.addToCart(p.id, qty.value); UI.toast(r.msg, r.ok ? (r.capped ? 'warning' : 'success') : 'error'); UI.updateCartBadge(); return r.ok; };
+      const add = () => { clamp();const r = Store.addToCart(p.id, qty.value); UI.toast(r.msg, r.ok ? (r.capped ? 'warning' : 'success') : 'error'); UI.updateCartBadge();if(r.ok)UI.maybeInviteDealer();return r.ok; };
       document.getElementById('add-btn').addEventListener('click', add);
       document.getElementById('buy-btn').addEventListener('click', () => { if (add()) location.href = 'cart.html'; });
     }
+    UI.refreshOnDealerChanges();
   </script>
 </body>
 </html>

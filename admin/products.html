@@ -85,6 +85,15 @@
               <div class="field full"><label for="f-desc">Full description</label><textarea class="textarea" id="f-desc">${UI.esc(p.desc)}</textarea></div>
               <div class="field full"><label for="f-specs">Specifications (one per line: Name: Value)</label><textarea class="textarea" id="f-specs" placeholder="Pack size: 12 pieces">${UI.esc(Object.entries(p.specs || {}).map(([key,value])=>key+': '+value).join('\n'))}</textarea></div>
               <label class="checkbox full"><input type="checkbox" id="f-featured" ${p.featured ? 'checked' : ''}> Feature on homepage</label>
+              <fieldset class="dealer-rule-editor full"><legend>Approved dealer pricing</legend>
+                <label class="checkbox"><input type="checkbox" id="f-wholesale" ${p.wholesale?.enabled ? 'checked' : ''}> Enable dealer minimums and quantity pricing</label>
+                <p class="hint">Retail customers still buy from 1 unit at the regular price. These rules apply only after dealer approval.</p>
+                <div class="form-grid" id="wholesale-fields" style="margin-top:14px">
+                  <div class="field"><label for="f-minimum">Minimum units per product</label><input class="input" id="f-minimum" type="number" min="1" step="1" value="${p.wholesale?.minimum || 100}"></div>
+                  <div class="field"><label for="f-multiple">Pack increment (units)</label><input class="input" id="f-multiple" type="number" min="1" step="1" value="${p.wholesale?.multiple || 1}"></div>
+                  <div class="field full"><label for="f-tiers">Quantity : total price in RM (one price break per line)</label><textarea class="textarea" id="f-tiers" placeholder="50: 45\n100: 85">${UI.esc((p.wholesale?.tiers || []).map(t=>t.quantity+': '+t.total).join('\n'))}</textarea><p class="hint">Example: 50: 45 means RM 45 for 50 units (RM 0.90 each). At 100: 85, quantities of 100 or more use RM 0.85 each. 150 units cost RM 127.50. The first price break must match the minimum; use a minimum of 50 for this example. Retail coupons do not stack with dealer prices.</p></div>
+                </div>
+              </fieldset>
             </div>
             <div class="modal-actions">
               <button type="button" class="btn btn-outline" onclick="UI.closeModal()">Cancel</button>
@@ -96,6 +105,12 @@
         const preview = () => { $('preview').innerHTML = UI.art({ name: $('f-name').value, art: $('f-art').value, colors: [$('f-c1').value, $('f-c2').value] }); };
         ['f-art', 'f-c1', 'f-c2'].forEach((id) => $(id).addEventListener('input', preview));
         preview();
+        const toggleWholesale = () => {
+          const enabled=$('f-wholesale').checked;
+          $('wholesale-fields').hidden=!enabled;
+          ['f-minimum','f-multiple','f-tiers'].forEach(id=>{$(id).disabled=!enabled;$(id).required=enabled;});
+        };
+        $('f-wholesale').addEventListener('change',toggleWholesale);toggleWholesale();
 
         $('pform').addEventListener('submit', (e) => {
           e.preventDefault();
@@ -105,6 +120,17 @@
           const old = parseFloat($('f-old').value);
           if (!name || !(price > 0) || !(stock >= 0)) { UI.toast('Please enter a name, price and stock', 'error'); return; }
           if (old && old <= price) { UI.toast('Original price must be higher than the selling price', 'error'); return; }
+          const wholesale={enabled:$('f-wholesale').checked,minimum:Number($('f-minimum').value),multiple:Number($('f-multiple').value),tiers:[]};
+          if(wholesale.enabled) {
+            for(const line of $('f-tiers').value.split('\n').filter(s=>s.trim())) {
+              const parts=line.split(':');
+              if(parts.length!==2 || !parts[0].trim() || !parts[1].trim()) {UI.toast('Use quantity: total price for each price break.','error');return;}
+              wholesale.tiers.push({quantity:Number(parts[0].trim()),total:Number(parts[1].trim())});
+            }
+            const error=Store.validateWholesaleRule(wholesale);
+            if(error) {UI.toast(error,'error');return;}
+            wholesale.tiers.sort((a,b)=>a.quantity-b.quantity);
+          }
           const specs = {};
           for (const line of $('f-specs').value.split('\n').filter(s=>s.trim())) {
             const colon = line.indexOf(':');
@@ -115,7 +141,7 @@
           }
           const list = Store.products();
           const data = {
-            name, price, stock, oldPrice: old || null, specs,
+            name, price, stock, oldPrice: old || null, specs, wholesale,
             category: $('f-cat').value, art: $('f-art').value, colors: [$('f-c1').value, $('f-c2').value],
             short: $('f-short').value.trim(), desc: $('f-desc').value.trim() || $('f-short').value.trim(), featured: $('f-featured').checked
           };

@@ -25,6 +25,7 @@
             ${link('orders.html', 'box', 'Orders', 'orders', pending)}
             ${link('products.html', 'tag', 'Products', 'products', lowStock ? lowStock : '')}
             ${link('customers.html', 'users', 'Customers', 'customers')}
+            ${link('dealers.html', 'shield', 'Dealer Applications', 'dealers', Store.dealerApplications().filter(a=>a.status==='Pending').length)}
             <div class="side-label">Demo</div>
             <a href="../proposal.html">${I.chart}Lucky Dotcom Proposal</a>
             <a href="../demos.html">${I.store}Choose a Business Demo</a>
@@ -74,11 +75,11 @@
     const opts = Store.STATUSES.concat('Cancelled');
     const m = UI.openModal(`
       <h2>Order ${o.id}</h2>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap" class="muted">${UI.statusBadge(o.status)}<span>Placed ${Store.formatDate(o.createdAt, true)}</span></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap" class="muted">${UI.statusBadge(o.status)}<span>${UI.esc(o.buyerType || 'Retail')} order · Placed ${Store.formatDate(o.createdAt, true)}</span></div>
       <div class="om-grid">
         <div>
           <h4>Items</h4>
-          ${o.items.map((i) => `<div class="mini-item"><div class="cart-thumb">${UI.art(i)}<span class="qty-badge">${i.qty}</span></div><div class="mi-name">${UI.esc(i.name)}<div class="muted" style="font-weight:400;font-size:12px">${i.id} · ${Store.formatRM(i.price)} each</div></div><div class="mi-price">${Store.formatRM(i.price * i.qty)}</div></div>`).join('')}
+          ${o.items.map((i) => `<div class="mini-item"><div class="cart-thumb">${UI.art(i)}<span class="qty-badge">${i.qty}</span></div><div class="mi-name">${UI.esc(i.name)}<div class="muted" style="font-weight:400;font-size:12px">${i.id} · ${Store.formatUnitPrice(i.price)} each</div></div><div class="mi-price">${Store.formatRM(i.price * i.qty)}</div></div>`).join('')}
           <div style="border-top:1px solid var(--border);margin:10px 0 4px"></div>
           <div class="summary-row"><span>Subtotal</span><span>${Store.formatRM(o.subtotal)}</span></div>
           ${o.discount ? `<div class="summary-row discount"><span>Discount (${o.coupon})</span><span>− ${Store.formatRM(o.discount)}</span></div>` : ''}

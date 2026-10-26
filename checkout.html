@@ -71,7 +71,7 @@
             <aside>
               <div class="panel" style="position:sticky;top:90px">
                 <div class="panel-title">Order Summary <a href="cart.html" class="link" style="font-size:14px">Edit</a></div>
-                <div id="summary"></div>
+                <div id="summary"></div><div id="checkout-rules"></div>
                 <button type="submit" class="btn btn-primary btn-block" style="margin-top:18px;height:52px">${I.lock} Place Order</button>
                 <div class="secure-note">Demo checkout — no real payment will be charged</div>
               </div>
@@ -106,6 +106,8 @@
         function renderSummary() {
           const items = Store.cartItems();
           const t = Store.cartTotals(shipMethod);
+          $('checkout-rules').innerHTML=UI.cartRuleMessages();
+          page.querySelector('button[type="submit"]').disabled=Store.cartValidation().length>0;
           $('summary').innerHTML = `
             ${items.map((p) => `<div class="mini-item"><div class="cart-thumb">${UI.art(p)}<span class="qty-badge">${p.qty}</span></div><div class="mi-name">${UI.esc(p.name)}</div><div class="mi-price">${Store.formatRM(p.price * p.qty)}</div></div>`).join('')}
             <div style="border-top:1px solid var(--border);margin:12px 0 4px"></div>
@@ -117,6 +119,7 @@
         }
 
         renderShip(); renderPay(); renderSummary();
+        UI.maybeInviteDealer();
 
         $('checkout-form').addEventListener('change', (e) => {
           if (e.target.name === 'ship') { shipMethod = e.target.value; renderShip(); renderSummary(); }
@@ -125,6 +128,8 @@
 
         $('checkout-form').addEventListener('submit', (e) => {
           e.preventDefault();
+          const ruleErrors=Store.cartValidation();
+          if(ruleErrors.length){UI.toast(ruleErrors.join(' '),'error');renderSummary();return;}
           const req = ['name', 'phone', 'email', 'line1', 'city', 'postcode'];
           const missing = req.filter((id) => !$(id).value.trim());
           req.forEach((id) => $(id).style.borderColor = missing.includes(id) ? 'var(--danger)' : '');
@@ -142,7 +147,7 @@
               notes: $('notes').value.trim(), shippingMethod: shipMethod, payment: payMethod
             });
             overlay.remove();
-            if (!r.ok) { UI.toast(r.msg, 'error'); return; }
+            if (!r.ok) { UI.toast(r.msg, 'error'); renderSummary(); return; }
             UI.updateCartBadge();
             showSuccess(r.order);
           }, 1400);
@@ -171,6 +176,7 @@
         }
       }
     }
+    UI.refreshOnDealerChanges();
   </script>
 </body>
 </html>

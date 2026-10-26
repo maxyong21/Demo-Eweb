@@ -40,11 +40,15 @@
         return;
       }
       const t = Store.cartTotals('standard');
+      const errors=Store.cartValidation();
+      const dealerPrices=items.some(p=>p.wholesaleApplied);
       const coupon = Store.getCoupon();
       const remaining = S.freeShippingMin - (t.subtotal - t.discount);
       const pct = Math.min(100, ((t.subtotal - t.discount) / S.freeShippingMin) * 100);
 
       root.innerHTML = `
+        ${UI.cartRuleMessages()}
+        ${Store.bulkOpportunity()?`<div class="dealer-panel"><b>Buying more than 100 units?</b><p>${Store.dealerApplication()?.status==='Pending'?'Your dealer application is pending. Retail prices remain active until approval.':'You can apply for dealer access or continue at retail prices.'}</p><a href="dealer.html" class="link">${Store.dealerApplication()?.status==='Pending'?'View application status':'Apply for wholesale / dealer access'} →</a></div>`:''}
         <div class="cart-layout">
           <div class="panel">
             <div class="panel-title">${items.length} item${items.length === 1 ? '' : 's'} in your cart <button class="btn btn-ghost btn-sm" id="clear">Clear cart</button></div>
@@ -53,18 +57,20 @@
                 <a class="cart-thumb" href="product.html?id=${p.id}">${UI.art(p)}</a>
                 <div class="cart-info">
                   <a href="product.html?id=${p.id}">${UI.esc(p.name)}</a>
-                  <div class="muted">${Store.category(p.category).name} · ${Store.formatRM(p.price)} each</div>
+                  <div class="muted">${Store.category(p.category).name} · ${Store.formatUnitPrice(p.price)} each</div>
+                  ${p.wholesaleApplied?`<div class="dealer-line-note">Dealer price: ${p.tier.quantity} units for ${Store.formatRM(p.tier.total)} · effective rate applied to all ${p.qty} units.</div>`:''}
+                  ${Store.dealerRule(p)?`<div class="hint">Dealer minimum ${p.wholesale.minimum} units · multiples of ${p.wholesale.multiple}.</div>${p.qty<p.wholesale.minimum?`<button class="btn btn-outline btn-sm" data-minimum="${p.id}" ${p.stock<p.wholesale.minimum?'disabled':''}>Set quantity to ${p.wholesale.minimum}</button>`:''}`:''}
                   ${p.qty >= p.stock ? `<div class="hint" style="color:var(--warning)">Max available: ${p.stock}</div>` : ''}
                   <div class="cart-controls">
                     <div class="qty qty-sm">
                       <button data-dec="${p.id}" aria-label="Decrease">${I.minus}</button>
-                      <input type="number" value="${p.qty}" min="1" max="${p.stock}" data-qty="${p.id}" aria-label="Quantity">
+                      <input type="number" value="${p.qty}" min="${Store.dealerRule(p)?.minimum || 1}" step="${Store.dealerRule(p)?.multiple || 1}" max="${p.stock}" data-qty="${p.id}" aria-label="Quantity">
                       <button data-inc="${p.id}" aria-label="Increase" ${p.qty >= p.stock ? 'disabled' : ''}>${I.plus}</button>
                     </div>
                     <button class="remove-btn" data-remove="${p.id}">${I.trash} Remove</button>
                   </div>
                 </div>
-                <div class="cart-line-total">${Store.formatRM(p.price * p.qty)}</div>
+                <div class="cart-line-total">${Store.formatRM(p.lineTotal)}</div>
               </div>`).join('')}
           </div>
 
@@ -75,7 +81,7 @@
                 ${remaining > 0 ? `Add <b>${Store.formatRM(remaining)}</b> more for <b>FREE shipping</b>` : '🎉 You have unlocked <b>FREE shipping</b>!'}
                 <div class="ship-bar"><span style="width:${pct}%"></span></div>
               </div>
-              ${coupon && t.coupon
+              ${dealerPrices ? '<p class="dealer-line-note">Dealer prices applied. Retail coupons cannot be combined with these prices.</p>' : coupon && t.coupon
                 ? `<div class="coupon-applied"><span>Code <b>${coupon}</b> applied</span><button id="remove-coupon">Remove</button></div>`
                 : `<form class="coupon-form" id="coupon-form"><input class="input" id="coupon" placeholder="Coupon code" aria-label="Coupon code"><button class="btn btn-outline btn-sm" style="height:42px">Apply</button></form>
                    <div class="hint" style="margin:-8px 0 14px">Try <b>DEMO10</b> or <b>WELCOME50</b></div>`}
@@ -84,7 +90,7 @@
               <div class="summary-row"><span>Shipping</span><span>${t.shipping ? Store.formatRM(t.shipping) : 'FREE'}</span></div>
               <div class="summary-row"><span>SST (${S.sstRate * 100}%)</span><span>${Store.formatRM(t.tax)}</span></div>
               <div class="summary-row total"><span>Total</span><span>${Store.formatRM(t.total)}</span></div>
-              <a href="checkout.html" class="btn btn-primary btn-block" style="margin-top:18px;height:52px">Proceed to Checkout</a>
+              ${errors.length?'<button disabled class="btn btn-primary btn-block" style="margin-top:18px;height:52px">Update cart to continue</button>':'<a href="checkout.html" class="btn btn-primary btn-block" style="margin-top:18px;height:52px">Proceed to Checkout</a>'}
               <a href="shop.html" class="btn btn-ghost btn-block" style="margin-top:8px">Continue Shopping</a>
               <div class="secure-note">${I.lock} Secure checkout · Demo only, no real payment</div>
             </div>
@@ -98,6 +104,7 @@
         UI.toast(r.msg, r.ok ? 'success' : 'error');
         if (r.ok) render();
       });
+      UI.maybeInviteDealer();
     }
 
     root.addEventListener('click', (e) => {
@@ -105,19 +112,22 @@
       if (!t) return;
       const items = Store.cartItems();
       const find = (id) => items.find((i) => i.id === id);
-      if (t.dataset.inc) Store.setQty(t.dataset.inc, find(t.dataset.inc).qty + 1);
-      else if (t.dataset.dec) Store.setQty(t.dataset.dec, find(t.dataset.dec).qty - 1);
+      let result;
+      if(t.dataset.minimum) result=Store.setQty(t.dataset.minimum,Store.dealerRule(find(t.dataset.minimum)).minimum);
+      else if (t.dataset.inc) result=Store.setQty(t.dataset.inc, find(t.dataset.inc).qty + (Store.dealerRule(find(t.dataset.inc))?.multiple || 1));
+      else if (t.dataset.dec) result=Store.setQty(t.dataset.dec, find(t.dataset.dec).qty - (Store.dealerRule(find(t.dataset.dec))?.multiple || 1));
       else if (t.dataset.remove) { Store.removeFromCart(t.dataset.remove); UI.toast('Item removed from cart'); }
       else if (t.id === 'clear') { Store.clearCart(); UI.toast('Cart cleared'); }
       else if (t.id === 'remove-coupon') Store.removeCoupon();
       else return;
+      if(result && !result.ok) UI.toast(result.msg,'error');
       render();
     });
     root.addEventListener('change', (e) => {
-      if (e.target.dataset.qty) { Store.setQty(e.target.dataset.qty, Math.max(1, parseInt(e.target.value, 10) || 1)); render(); }
+      if (e.target.dataset.qty) { const result=Store.setQty(e.target.dataset.qty, Math.max(1, parseInt(e.target.value, 10) || 1)); if(!result.ok)UI.toast(result.msg,'error');render(); }
     });
 
-    render();
+    UI.refreshOnDealerChanges();render();
   </script>
 </body>
 </html>

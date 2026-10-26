@@ -118,9 +118,10 @@
         <div class="pc-cat">${esc(Store.category(p.category).name)}</div>
         <a class="pc-name" href="${BASE}product.html?id=${p.id}">${esc(p.name)}</a>
         <div class="pc-rating">${stars(p.rating)}<span>${p.rating} (${p.reviews.toLocaleString()})</span></div>
+        ${p.wholesale?.enabled?`<p class="dealer-line-note">${Store.isDealer()?'Dealer minimum '+p.wholesale.minimum+' units · see quantity prices':'Dealer prices available after approval'}</p>`:''}
         <div class="pc-foot">
-          <div class="pc-price">${priceHTML(p)}</div>
-          <button class="btn-add" data-add="${p.id}" ${p.stock <= 0 ? 'disabled' : ''} aria-label="Add ${esc(p.name)} to cart">${ICONS.cart}</button>
+          <div class="pc-price">${p.wholesale?.enabled && Store.isDealer()?'<small class="muted">Retail </small>':''}${priceHTML(p)}</div>
+          <button class="btn-add" data-add="${p.id}" ${p.stock < (Store.dealerRule(p)?.minimum || 1) ? 'disabled' : ''} aria-label="Add ${esc(p.name)} to cart">${ICONS.cart}</button>
         </div>
       </div>
     </article>`;
@@ -170,6 +171,33 @@
     });
   }
 
+  let bulkPromptShown=false;
+  function maybeInviteDealer() {
+    if(bulkPromptShown || !Store.bulkOpportunity()) return;
+    const application=Store.dealerApplication();
+    if(application?.status==='Pending') return;
+    let dismissed=false;
+    try {dismissed=sessionStorage.getItem('bulk_invitation_'+Demo.active)==='dismissed';} catch { /* optional hint */ }
+    if(dismissed)return;
+    bulkPromptShown=true;
+    const m=openModal(`<h2>Buying in bulk?</h2><p class="muted" style="margin:15px 0">Your cart has more than 100 units. Would you like to apply for wholesale / dealer access?</p><p>Complete a business application and wait for admin approval. Dealer prices and product minimums apply after approval. You can also continue at retail prices.</p><div class="dealer-action-row"><a class="btn btn-primary" href="${BASE}dealer.html">Yes, apply for dealer access</a><button class="btn btn-outline" id="continue-retail">Continue at retail prices</button></div>`);
+    const dismiss=()=>{try {sessionStorage.setItem('bulk_invitation_'+Demo.active,'dismissed');}catch { /* optional hint */ }closeModal();};
+    m.querySelector('#continue-retail').addEventListener('click',dismiss);
+  }
+  function cartRuleMessages() {
+    const errors=Store.cartValidation();
+    return errors.length ? `<div class="dealer-errors" role="alert"><b>Please update your cart before checkout</b><ul>${errors.map(e=>`<li>${esc(e)}</li>`).join('')}</ul><a class="link" href="${BASE}cart.html">Review cart →</a></div>` : '';
+  }
+  function refreshOnDealerChanges() {
+    window.addEventListener('storage',e=>{
+      if([Store.storagePrefix+'dealers',Store.storagePrefix+'products',Store.storagePrefix+'wholesale_settings'].includes(e.key)) {
+        // Preserve the completed-order confirmation; it contains historical prices.
+        if(location.pathname.endsWith('/checkout.html') && !Store.cartCount()) return;
+        location.reload();
+      }
+    });
+  }
+
   function renderHeader(active) {
     const el = document.getElementById('site-header');
     if (!el) return;
@@ -183,7 +211,7 @@
             <div class="dd-head"><b>${esc(u.name)}</b><small>${esc(u.role === 'admin' ? 'Administrator' : u.email)}</small></div>
             ${u.role === 'admin'
               ? `<a href="${BASE}admin/index.html">${ICONS.grid}Admin Panel</a>`
-              : `<a href="${BASE}orders.html">${ICONS.box}My Orders</a>`}
+              : `<a href="${BASE}orders.html">${ICONS.box}My Orders</a><a href="${BASE}dealer.html">${ICONS.shield}${Store.isDealer()?'Approved dealer':'Dealer application'}</a>`}
             <button data-logout>${ICONS.logout}Logout</button>
           </div>
         </div>`
@@ -200,7 +228,8 @@
             ${link('index.html', 'Home', 'home')}
             ${link('proposal.html', 'Proposal', 'proposal')}
             ${link('shop.html', 'Shop All', 'shop')}
-            ${DATA.categories.slice(0,3).map(c=>link('shop.html?cat='+c.id,esc(c.name),c.id)).join('')}
+            ${DATA.categories.slice(0,2).map(c=>link('shop.html?cat='+c.id,esc(c.name),c.id)).join('')}
+            ${link('dealer.html','Dealer access','dealer')}
             ${link('shop.html?deals=1', 'Deals', 'deals')}
           </nav>
           <form class="search" action="${BASE}shop.html" role="search">
@@ -249,9 +278,11 @@
     const add = e.target.closest('[data-add]');
     if (add) {
       e.preventDefault();
-      const r = Store.addToCart(add.dataset.add, 1);
+      const product=Store.product(add.dataset.add);
+      const r = Store.addToCart(add.dataset.add, Store.dealerRule(product)?.minimum || 1);
       toast(r.msg, r.ok ? (r.capped ? 'warning' : 'success') : 'error');
       updateCartBadge();
+      if(r.ok) maybeInviteDealer();
       if (r.ok) { add.classList.add('added'); setTimeout(() => add.classList.remove('added'), 700); }
       return;
     }
@@ -265,5 +296,5 @@
     if (dd && e.target.closest('.account-btn')) dd.classList.toggle('open');
   });
 
-  window.UI = { BASE, ICONS, esc, art, stars, priceHTML, discountPct, productCard, statusBadge, toast, openModal, closeModal, renderHeader, renderFooter, updateCartBadge };
+  window.UI = { BASE, ICONS, esc, art, stars, priceHTML, discountPct, productCard, statusBadge, toast, openModal, closeModal, renderHeader, renderFooter, updateCartBadge,maybeInviteDealer,cartRuleMessages,refreshOnDealerChanges };
 })();
