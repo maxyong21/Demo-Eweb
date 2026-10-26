@@ -22,5 +22,9 @@
     $('monthly-orders').value=100;$('order-value').value=500;$('order-growth').value=0;$('basket-growth').value=0;calculate();
   });
   $('print-proposal').addEventListener('click',()=>window.print());
+  // Expand the appendix for PDF output, then restore what the reader had open.
+  let closed = [];
+  window.addEventListener('beforeprint',()=>{closed=[...document.querySelectorAll('details:not([open])')];closed.forEach(d=>d.open=true);});
+  window.addEventListener('afterprint',()=>{closed.forEach(d=>d.open=false);closed=[];});
   calculate();
 })();
