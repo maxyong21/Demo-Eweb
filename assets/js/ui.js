@@ -186,6 +186,7 @@
           <a href="${BASE}index.html" class="logo"><span class="logo-mark">${ICONS.bolt}</span><span>Volt<b>Hub</b></span></a>
           <nav class="nav" id="main-nav">
             ${link('index.html', 'Home', 'home')}
+            ${link('proposal.html', 'Proposal', 'proposal')}
             ${link('shop.html', 'Shop All', 'shop')}
             ${link('shop.html?cat=smartphones', 'Phones', 'smartphones')}
             ${link('shop.html?cat=laptops', 'Laptops', 'laptops')}

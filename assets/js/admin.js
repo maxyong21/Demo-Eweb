@@ -26,6 +26,7 @@
             ${link('products.html', 'tag', 'Products', 'products', lowStock ? lowStock : '')}
             ${link('customers.html', 'users', 'Customers', 'customers')}
             <div class="side-label">Demo</div>
+            <a href="../proposal.html">${I.chart}Lucky Dotcom Proposal</a>
             <a href="../index.html" target="_blank" rel="noopener">${I.store}View Storefront</a>
             <button id="reset-demo">${I.refresh}Reset Demo Data</button>
             <button data-logout>${I.logout}Logout</button>
