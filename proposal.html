@@ -13,7 +13,7 @@
   <header class="proposal-header">
     <div class="wrap header-row">
       <a class="brand" href="proposal.html"><span class="brand-dot" aria-hidden="true"></span>Lucky Dotcom<span class="brand-label">Proposal · Oct 2026</span></a>
-      <nav aria-label="Proposal navigation"><a href="#summary">Summary</a><a href="#diagnosis">The problem</a><a href="#demo">Demo</a><a href="#plan">Plan</a></nav>
+      <nav aria-label="Proposal navigation"><a href="#summary">Summary</a><a href="#diagnosis">The problem</a><a href="#demo">Demo</a><a href="#plan">Plan</a><a href="#costs">Costs</a></nav>
       <button class="button button-small" id="print-proposal">Save as PDF</button>
     </div>
   </header>
@@ -171,6 +171,61 @@
       <div class="success-panel">
         <div><h3>The one question that matters: is the business better off?</h3><p>We compare extra profit and staff time saved against the cost of building and running the website. An order that just moves from Shopee is not counted as a new sale.</p></div>
         <ul class="success-checks"><li>More qualified buying enquiries</li><li>More customers ordering again</li><li>Fewer mistakes and less admin</li><li>Better profit after costs</li></ul>
+      </div>
+    </section>
+
+    <!-- Costs -->
+    <section class="section section-tint" id="costs">
+      <div class="wrap">
+        <div class="section-heading"><p class="eyebrow">06 · Costs</p><h2>What your website costs.</h2><p>Everything in one place: our package, the online services that keep the site running, and optional advertising.</p></div>
+
+        <div class="cost-summary">
+          <div class="cost-tile cost-tile-dark"><span>Pay once</span><b>RM 1,899</b><p>Website development</p></div>
+          <div class="cost-tile cost-tile-accent"><span>Every month (approx.)</span><b>~RM 310</b><p>RM 120 maintenance (yearly plan) + ~RM 190 hosting</p></div>
+          <div class="cost-tile"><span>Every year</span><b>RM 65–90</b><p>Domain name renewal</p></div>
+        </div>
+
+        <div class="card cost-block">
+          <div class="cost-block-head"><h3><span class="cost-num">1</span>Our development &amp; maintenance</h3></div>
+          <div class="cost-cards">
+            <article><h4>Development</h4><p class="cost-price">RM 1,899</p><p>One-time fee. Full website build.</p></article>
+            <article><h4>Maintenance</h4><p class="cost-price">RM 150 <small>/ month</small></p><p>Or pay yearly: <b>RM 1,440</b> <s>RM 1,800</s> for the first year. 20% off, just RM 120/month.</p></article>
+            <article><h4>New features</h4><p class="cost-price">from RM 50</p><p>Per add-on, quoted based on the feature.</p></article>
+          </div>
+        </div>
+
+        <div class="card cost-block">
+          <div class="cost-block-head"><h3><span class="cost-num">2</span>Running costs (third-party services)</h3></div>
+          <div class="cost-table-wrap"><table class="cost-table">
+            <thead><tr><th scope="col">Item</th><th scope="col">Provider</th><th scope="col">Cost</th><th scope="col">What you get</th></tr></thead>
+            <tbody>
+              <tr><td>Database &amp; login</td><td>Supabase Pro</td><td class="cost-strong">~RM 105 / mo</td><td>USD 25. 8 GB storage, daily backups, always on.</td></tr>
+              <tr><td>Website hosting</td><td>Vercel Pro</td><td class="cost-strong">~RM 85 / mo</td><td>USD 20. Fast loading worldwide.</td></tr>
+              <tr><td>Domain name</td><td>Namecheap / Cloudflare / Exabytes</td><td class="cost-strong">RM 65–90 / yr</td><td>.com, .com.my, .net or .shop; price depends on name.</td></tr>
+              <tr><td>Payment gateway</td><td>Curlec / HitPay / Billplz / Stripe</td><td class="cost-strong">~1.2–2% / sale</td><td>No monthly fee, only charged per transaction.</td></tr>
+              <tr><td>SSL security</td><td>Let’s Encrypt / Cloudflare</td><td class="cost-free">FREE</td><td>Secure padlock (https), auto-renewed.</td></tr>
+              <tr><td>System emails</td><td>Resend / Brevo</td><td class="cost-free">FREE</td><td>Up to 3,000–9,000 emails a month.</td></tr>
+              <tr><td>WhatsApp chat</td><td>Click-to-Chat</td><td class="cost-free">FREE</td><td>One tap to message your sales rep.</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="card cost-block">
+          <div class="cost-block-head"><h3><span class="cost-num">3</span>Optional: Facebook &amp; Instagram ads</h3><p>Budget set by you</p></div>
+          <div class="cost-table-wrap"><table class="cost-table">
+            <thead><tr><th scope="col">Placement</th><th scope="col">Per 1,000 views</th><th scope="col">Per click</th><th scope="col">Best for</th></tr></thead>
+            <tbody>
+              <tr><td>Facebook Feed</td><td>RM 6–15</td><td>RM 0.40–1.20</td><td>B2B wholesale offers, detailed specs</td></tr>
+              <tr><td>Facebook Reels</td><td>RM 4.50–9</td><td>RM 0.30–0.80</td><td>Cheap reach, unboxings, product demos</td></tr>
+              <tr><td>Instagram Feed</td><td>RM 12–25</td><td>RM 0.80–2.50</td><td>Premium visuals, highest engagement</td></tr>
+              <tr><td>Instagram Reels / Stories</td><td>RM 8–16</td><td>RM 0.50–1.50</td><td>Flash sales, coupon codes, polls</td></tr>
+              <tr class="cost-highlight"><td>Click-to-WhatsApp ★</td><td>RM 10–18</td><td>RM 0.90–2.20 / chat</td><td><b>Best for wholesale (批发)</b>: inquiries go straight to sales</td></tr>
+              <tr><td>Audience Network</td><td>RM 5–10</td><td>RM 0.30–0.70</td><td>Low cost, high volume; fewer real buyers</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <p class="note cost-footnote">* Third-party and advertising costs are estimates. USD prices converted at approx. RM 4.2. Exact costs will be confirmed based on the plan you choose and your business volume.</p>
       </div>
     </section>
 
